@@ -116,7 +116,7 @@ test: all
 lint:
 	# check for unused imports, the rest is done by black
 	flake8 --select=F401 src tools pyodide_build benchmark conftest.py docs
-	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\|js\)"` | (! grep '<replacement ')
+	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\|js\)" -not -path "*/comlink/*"` | (! grep '<replacement ')
 	black --check .
 	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docs
 
