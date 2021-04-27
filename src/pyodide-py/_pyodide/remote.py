@@ -32,7 +32,7 @@ class RemoteJsProxyFuture(SyncifyableFuture):
         return self.proxy.syncify()
 
     async def do_async(self):
-        return await self.schedule()
+        return await self.proxy.schedule()
 
 
 class Test:
