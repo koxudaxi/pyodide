@@ -63,8 +63,8 @@ function isPlain(val: any) {
   );
 }
 
-function isSerializable(obj: any, transfers : Transferable[] = []) {
-  if(transfers.includes(obj)){
+function isSerializable(obj: any, transfers: Transferable[] = []) {
+  if (transfers.includes(obj)) {
     return true;
   }
   if (!isPlain(obj)) {
@@ -129,10 +129,12 @@ export const throwTransferHandler: TransferHandler<
   },
 };
 
-export function toWireValue(ep : Endpoint, value: any, _sync : boolean = false): [WireValue, Transferable[]] {
-  console.log(value);
+export function toWireValue(
+  ep: Endpoint,
+  value: any,
+  _sync: boolean = false
+): [WireValue, Transferable[]] {
   for (const [name, handler] of transferHandlers) {
-    console.log("name", name, handler.canHandle(value))
     if (handler.canHandle(value)) {
       const [serializedValue, transferables] = handler.serialize(value);
       return [
@@ -145,7 +147,7 @@ export function toWireValue(ep : Endpoint, value: any, _sync : boolean = false):
       ];
     }
   }
-  if(isSerializable(value, transferCache.get(value))){
+  if (isSerializable(value, transferCache.get(value))) {
     return [
       {
         type: WireValueType.RAW,
@@ -155,15 +157,22 @@ export function toWireValue(ep : Endpoint, value: any, _sync : boolean = false):
     ];
   }
   let store_key = storeNewValue(ep, value);
-  return [{
-    type: WireValueType.ID,
-    store_key,
-    endpoint_uuid : (ep as any)[endpointUUID],
-    ownkeys : Object.getOwnPropertyNames(value)
-  }, []];
+  return [
+    {
+      type: WireValueType.ID,
+      store_key,
+      endpoint_uuid: (ep as any)[endpointUUID],
+      ownkeys: Object.getOwnPropertyNames(value),
+    },
+    [],
+  ];
 }
 
-export function fromWireValue(ep : Endpoint, value: WireValue, _sync : boolean = false): any {
+export function fromWireValue(
+  ep: Endpoint,
+  value: WireValue,
+  _sync: boolean = false
+): any {
   switch (value.type) {
     case WireValueType.HANDLER:
       return transferHandlers.get(value.name)!.deserialize(value.value);
@@ -171,7 +180,7 @@ export function fromWireValue(ep : Endpoint, value: WireValue, _sync : boolean =
       return value.value;
     case WireValueType.ID:
       let this_uuid = (ep as any)[endpointUUID];
-      if(this_uuid === value.endpoint_uuid){
+      if (this_uuid === value.endpoint_uuid) {
         return storeGetValue(ep, value.store_key);
       } else {
         return createProxy(ep, value.store_key, []);
@@ -182,24 +191,23 @@ export function fromWireValue(ep : Endpoint, value: WireValue, _sync : boolean =
 const proxyStore = Symbol("Comlink.proxyStore");
 const endpointUUID = Symbol("Comlink.endpointUUID");
 
-export function storeCreate(obj : any){
-  if(proxyStore in obj){
+export function storeCreate(obj: any) {
+  if (proxyStore in obj) {
     return;
   }
-  obj[proxyStore] = { objects : new Map(), counter : new Uint32Array([1]) };
+  obj[proxyStore] = { objects: new Map(), counter: new Uint32Array([1]) };
   obj[endpointUUID] = generateUUID();
 }
 
-export function storeGetValue(obj : any, key : StoreKey){
+export function storeGetValue(obj: any, key: StoreKey) {
   return obj[proxyStore].objects.get(key);
 }
 
-export function storeNewValue(obj : any, value : any) : StoreKey {
-  if(!(proxyStore in obj)){
-    console.error("object", obj, "has no proxy store...");
+export function storeNewValue(obj: any, value: any): StoreKey {
+  if (!(proxyStore in obj)) {
     storeCreate(obj);
   }
-  let {objects, counter} = obj[proxyStore];
+  let { objects, counter } = obj[proxyStore];
   while (objects.has(counter[0])) {
     // Increment by two here (and below) because even integers are reserved
     // for singleton constants
@@ -211,8 +219,8 @@ export function storeNewValue(obj : any, value : any) : StoreKey {
   return key;
 }
 
-export function storeDeleteKey(obj : any, key : StoreKey) : any {
-  let {objects} = obj[proxyStore];
+export function storeDeleteKey(obj: any, key: StoreKey): any {
+  let { objects } = obj[proxyStore];
   objects.delete(key);
   console.log("deleted", key, objects);
 }

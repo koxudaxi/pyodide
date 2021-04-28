@@ -63,7 +63,7 @@ export interface IdWireValue {
   id?: string;
   type: WireValueType.ID;
   ownkeys: string[];
-  endpoint_uuid : string;
+  endpoint_uuid: string;
   store_key: number;
 }
 
@@ -130,7 +130,6 @@ export interface DestroyMessage {
   type: MessageType.DESTROY;
   store_key: StoreKey;
 }
-
 
 export type Message =
   | GetMessage

@@ -337,7 +337,7 @@ class HTTPConnection:
         url = url or "/"
         self._validate_path(url)
         self.proto = "http"
-        self.url = f"{self.proto}://{self.host}:{self.port}{url}"
+        self.url = f"{self.proto}://{self.host}:{self.port}/{url}"
 
     def _validate_path(self, url):
         """Validate a url for putrequest."""

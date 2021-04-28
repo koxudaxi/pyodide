@@ -6,7 +6,7 @@ import {
   PostMessageWithOrigin,
   WireValue,
   WireValueType,
-  StoreKey
+  StoreKey,
 } from "./protocol";
 
 import { requestResponseMessage } from "./request_response";
@@ -181,12 +181,14 @@ export function expose(obj_arg: any, ep: Endpoint = self as any) {
       ...(ev.data as Message),
     };
     let obj;
-    if(store_key){
+    if (store_key) {
       obj = storeGetValue(ep, store_key);
     } else {
       obj = obj_arg;
     }
-    const argumentList = (ev.data.argumentList || []).map((v : any) => fromWireValue(ep, v));
+    const argumentList = (ev.data.argumentList || []).map((v: any) =>
+      fromWireValue(ep, v)
+    );
     let returnValue;
     try {
       const last = path.pop();
@@ -220,10 +222,7 @@ export function expose(obj_arg: any, ep: Endpoint = self as any) {
         case MessageType.APPLY:
           {
             if (last) {
-              console.warn(1);
-              console.warn(rawValue, last, parent, argumentList);
               returnValue = parent[last].apply(parent, argumentList);
-              console.warn(2);
             } else {
               returnValue = rawValue.apply(parent, argumentList);
             }
@@ -256,15 +255,15 @@ export function expose(obj_arg: any, ep: Endpoint = self as any) {
         default:
           return;
       }
-      console.warn(returnValue);
       returnValue = await returnValue;
-    } finally {}
-    // } catch (value) {
-    //   console.warn("thrown", type, ev.data);
-    //   console.warn("thrown", value.constructor.name, value.message, value.stack);
-    //   return { value, [throwMarker]: 0 };
-    // }
-    const [wireValue, transferables] = toWireValue(ep, returnValue, !!ev.data.syncify);
+    } catch (value) {
+      returnValue = { value, [throwMarker]: 0 };
+    }
+    const [wireValue, transferables] = toWireValue(
+      ep,
+      returnValue,
+      !!ev.data.syncify
+    );
     if (ev.data.syncify) {
       syncResponse(ep, ev.data, wireValue);
     } else {
@@ -343,38 +342,33 @@ class ProxyPromise {
     return this.schedule().then(onfulfilled, onrejected);
   }
 
-  initiateSyncRequest(){
+  initiateSyncRequest() {
     if (this.scheduled) {
       throw new Error("Task already scheduled.");
     }
     this.scheduled = true;
     this._syncRequest = syncRequest(this);
-    console.log("111111");
     this._syncRequest.next();
-    console.log("222222");
   }
 
   syncify(): any {
-    if(!this._syncRequest){
+    if (!this._syncRequest) {
       this.initiateSyncRequest();
     }
     // Handle sync request logic in synclink.ts
-    console.log("3333");
     let result = this._syncRequest!.next().value;
-    console.log("4444");
     this.extra();
     let res = fromWireValue(this.endpoint, result, true);
-    console.log("6666");
     return res;
   }
 }
 
 export function createProxy<T>(
   ep: Endpoint,
-  store_key? : StoreKey,
+  store_key?: StoreKey,
   path: (string | number | symbol)[] = [],
   target: object = function () {},
-  keys = [],
+  keys = []
 ): Remote<T> {
   let isProxyReleased = false;
   const proxy = new Proxy(target, {
@@ -396,8 +390,8 @@ export function createProxy<T>(
           );
         };
       }
-      if (prop === "__destroy__"){
-        if(!store_key){
+      if (prop === "__destroy__") {
+        if (!store_key) {
           return () => {};
         }
         return () => {
@@ -408,9 +402,11 @@ export function createProxy<T>(
               store_key,
             },
             [],
-            () => { isProxyReleased = true; }
+            () => {
+              isProxyReleased = true;
+            }
           );
-        }
+        };
       }
       if (prop === "schedule") {
         let r = new ProxyPromise(ep, {
@@ -475,9 +471,10 @@ export function createProxy<T>(
         rawArgumentList = rawArgumentList[1];
         path = path.slice(0, -1);
       }
-      console.log("=====================");
-      const [argumentList, transferables] = processArguments(ep, rawArgumentList);
-      console.log("argumentList", argumentList);
+      const [argumentList, transferables] = processArguments(
+        ep,
+        rawArgumentList
+      );
       return new ProxyPromise(
         ep,
         {
@@ -491,7 +488,10 @@ export function createProxy<T>(
     },
     construct(_target, rawArgumentList) {
       throwIfProxyReleased(isProxyReleased);
-      const [argumentList, transferables] = processArguments(ep, rawArgumentList);
+      const [argumentList, transferables] = processArguments(
+        ep,
+        rawArgumentList
+      );
       return requestResponseMessage(
         ep,
         {
@@ -503,9 +503,9 @@ export function createProxy<T>(
         transferables
       ).then((v) => fromWireValue(ep, v));
     },
-    ownKeys(_target){
+    ownKeys(_target) {
       return keys;
-    }
+    },
   });
   return proxy as any;
 }
@@ -514,7 +514,10 @@ function myFlat<T>(arr: (T | T[])[]): T[] {
   return Array.prototype.concat.apply([], arr);
 }
 
-function processArguments(ep : Endpoint, argumentList: any[]): [WireValue[], Transferable[]] {
+function processArguments(
+  ep: Endpoint,
+  argumentList: any[]
+): [WireValue[], Transferable[]] {
   const processed = argumentList.map((v) => toWireValue(ep, v));
   return [processed.map((v) => v[0]), myFlat(processed.map((v) => v[1]))];
 }
