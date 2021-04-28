@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Comlink fork test</title>
+  </head>
+  <body>
+    <script type="module">
+      import * as Comlink from "../comlink/esm/comlink.mjs";
+      window.Comlink = Comlink;
+      const worker = new Worker("worker2.js");
+      const wrapped = Comlink.wrap(worker);
+      window.wk = wrapped;
+      await wk.set_proxy("main_globals", Comlink.proxy(window))
+      await wk.set_proxy("main_window", Comlink.proxy(window))
+      // await wk.runPythonAsync("from js import main_globals")
+    </script>
+    Test.
+  </body>
+</html>
