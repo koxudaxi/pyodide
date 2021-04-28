@@ -440,9 +440,11 @@ EM_JS_REF(JsRef,
               this_ = Module.hiwire.get_value(idthis);
             }
             let args = Module.hiwire.get_value(idargs);
-            if (this_ == = Module.Comlink) {
+            // clang-format off
+            if (this_ === Module.Comlink) {
               this_ = undefined;
             }
+            // clang-format on
             return Module.hiwire.new_value(func.apply(this_, args));
           });
 
@@ -606,7 +608,9 @@ EM_JS_NUM(bool, hiwire_is_comlink_proxy, (JsRef idobj), {
 
 EM_JS_NUM(bool, hiwire_is_remote_promise, (JsRef idobj), {
   let value = Module.hiwire.get_value(idobj);
-  return value.constructor.name == = "ProxyPromise";
+  // clang-format off
+  return value.constructor.name === "ProxyPromise";
+  // clang-format on
 });
 
 EM_JS_NUM(bool, hiwire_is_error, (JsRef idobj), {

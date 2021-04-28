@@ -3,7 +3,6 @@ import socket
 import io
 import email.message
 
-print("hi there!!")
 
 _UNKNOWN = "UNKNOWN"
 
@@ -218,7 +217,7 @@ class HTTPResponse(io.BufferedIOBase):
 
 
 class HTTPConnection:
-
+    proto = "http"
     response_class = HTTPResponse
     default_port = ""  # ignored
     auto_open = 1
@@ -336,7 +335,6 @@ class HTTPConnection:
 
         url = url or "/"
         self._validate_path(url)
-        self.proto = "http"
         self.url = f"{self.proto}://{self.host}:{self.port}/{url}"
 
     def _validate_path(self, url):
@@ -543,6 +541,10 @@ class HTTPConnection:
         except:
             response.close()
             raise
+
+
+class HTTPSConnection(HTTPConnection):
+    proto = "https"
 
 
 class HTTPException(Exception):

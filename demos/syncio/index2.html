@@ -6,15 +6,32 @@
   </head>
   <body>
     <script type="module">
-      import * as Comlink from "../comlink/esm/comlink.mjs";
+      import * as Comlink from "./comlink/dist/esm/comlink.js";
       window.Comlink = Comlink;
       const worker = new Worker("worker2.js");
       const wrapped = Comlink.wrap(worker);
       window.wk = wrapped;
-      await wk.set_proxy("main_globals", Comlink.proxy(window))
-      await wk.set_proxy("main_window", Comlink.proxy(window))
-      // await wk.runPythonAsync("from js import main_globals")
+      window.setInnerText = function(elt, value){
+        console.log(value);
+        elt.innerText = value;
+      }
+      async function main(){
+          await wk.set_main_window(Comlink.proxy(window))
+          await wk.runPythonAsync(`
+              from pyodide import http_client
+              conn = http_client.HTTPSConnection("spectralsequences.com")
+              conn.request("GET", "syncio-demo/index.html")
+              r = conn.getresponse()
+              from js import main_window
+              res_elt = await main_window.document.querySelector("#result");
+              old_content = await res_elt.innerText
+              res = r.read()
+              await main_window.setInnerText(res_elt, old_content * 5 + "\\n\\n" +  res[:100])
+          `)
+      }
+      main();
     </script>
-    Test.
+    Result was:
+    <p id="result">abcde</p>
   </body>
 </html>
