@@ -1,1 +1,1 @@
-/home/hood/pyodide/src/pyodide-py/pyodide/http_client.py
+../../src/pyodide-py/pyodide/http_client.py
