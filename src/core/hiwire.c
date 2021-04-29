@@ -635,7 +635,12 @@ EM_JS_REF(JsRef, hiwire_resolve_promise, (JsRef idobj), {
 });
 
 EM_JS_REF(JsRef, hiwire_to_string, (JsRef idobj), {
-  return Module.hiwire.new_value(Module.hiwire.get_value(idobj).toString());
+  let obj = Module.hiwire.get_value(idobj);
+  let res = obj.toString();
+  if(typeof res !== "string"){
+    res = Object.prototype.toString.call(obj);
+  }
+  return Module.hiwire.new_value(res);
 });
 
 EM_JS_REF(JsRef, hiwire_typeof, (JsRef idobj), {

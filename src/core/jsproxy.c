@@ -60,6 +60,7 @@ _Py_IDENTIFIER(create_future);
 _Py_IDENTIFIER(set_exception);
 _Py_IDENTIFIER(set_result);
 _Py_IDENTIFIER(__await__);
+_Py_IDENTIFIER(syncify);
 _Py_IDENTIFIER(__dir__);
 
 static PyObject* asyncio_get_event_loop;
@@ -705,6 +706,22 @@ JsProxy_RemoteAwait(PyObject* self, PyObject* _args)
   }
   return _PyObject_CallMethodId(fut, &PyId___await__, NULL);
 }
+
+static PyObject*
+JsProxy_syncify(PyObject* self, PyObject* _args)
+{
+  PyObject* fut = PyObject_CallFunctionObjArgs(ComlinkTask, self, NULL);
+  if (fut == NULL) {
+    return NULL;
+  }
+  return _PyObject_CallMethodId(fut, &PyId_syncify, NULL);
+}
+
+PyMethodDef JsProxy_syncify_MethodDef = {
+  "syncify",
+  (PyCFunction)JsProxy_syncify,
+  METH_NOARGS,
+};
 
 /**
  * Overload for `await proxy` for js objects that have a `then` method.
@@ -1511,6 +1528,7 @@ JsProxy_create_subtype(int flags)
   if (flags & IS_REMOTE_AWAITABLE) {
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_await, .pfunc = (void*)JsProxy_RemoteAwait };
+    methods[cur_method++] = JsProxy_syncify_MethodDef;
   }
 
   if (flags & (IS_AWAITABLE | IS_REMOTE_AWAITABLE)) {

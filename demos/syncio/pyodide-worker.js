@@ -103,12 +103,12 @@ class InnerExecution {
 
     onStdout(callback){
         this.proxies.push(callback);
-        this._stdout_callback = (msg) => callback(msg).schedule();
+        this._stdout_callback = (msg) => callback(msg).schedule_async();
     }
 
     onStderr(callback){
         this.proxies.push(callback);
-        this._stderr_callback = (msg) => callback(msg).schedule();
+        this._stderr_callback = (msg) => callback(msg).schedule_async();
     }
 }
 

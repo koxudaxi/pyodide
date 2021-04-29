@@ -109,10 +109,14 @@ class HTTPResponse(io.BufferedIOBase):
         if jsresponse is None:
             raise Exception("oops")
         self.jsresponse = jsresponse
-        self.code = self.status = jsresponse.status.syncify()
-        self.reason = jsresponse.statusText.syncify()
+        print(jsresponse)
+        status_req = jsresponse.status.schedule_sync()
+        reason_req = jsresponse.statusText.schedule_sync()
+        headers_req = jsresponse.headers.schedule_sync()
+        self.code = self.status = status_req.syncify()
+        self.reason = reason_req.syncify()
         self.headers = HTTPMessage()
-        for header in jsresponse.headers.syncify():
+        for header in headers_req.syncify():
             self.headers.set_raw(*header)
 
     def begin(self):
@@ -389,8 +393,7 @@ class HTTPConnection:
         options.method = self._method
         options.body = message_body
         options.headers = getattr(Array, "from")(self._headers)
-        self._fetch = main_window.fetch(self.url, options)
-        self._fetch.initiateSyncRequest()
+        self._fetch = main_window.fetch(self.url, options).schedule_sync()
 
     def request(self, method, url, body=None, headers={}, *, encode_chunked=False):
         """Send a complete request to the server."""
@@ -511,6 +514,7 @@ class HTTPConnection:
             raise ResponseNotReady(self.__state)
 
         jsresponse = self._fetch.syncify()
+        print(jsresponse)
 
         if self.debuglevel > 0:
             response = self.response_class(

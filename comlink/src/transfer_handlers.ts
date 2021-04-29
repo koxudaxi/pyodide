@@ -132,7 +132,6 @@ export const throwTransferHandler: TransferHandler<
 export function toWireValue(
   ep: Endpoint,
   value: any,
-  _sync: boolean = false
 ): [WireValue, Transferable[]] {
   for (const [name, handler] of transferHandlers) {
     if (handler.canHandle(value)) {
@@ -171,7 +170,6 @@ export function toWireValue(
 export function fromWireValue(
   ep: Endpoint,
   value: WireValue,
-  _sync: boolean = false
 ): any {
   switch (value.type) {
     case WireValueType.HANDLER:

@@ -42,7 +42,7 @@ class Execution {
             await initialized;
             this._inner = await new InnerExecution(code);
             this._result = this._inner.result();
-            this._validate_syntax = this._inner.validate_syntax().schedule();
+            this._validate_syntax = this._inner.validate_syntax().schedule_async();
             this._interrupt_buffer = await this._inner.interrupt_buffer();
             this._started = false;
             return this;
@@ -51,7 +51,7 @@ class Execution {
 
     start(){
         this._started = true;
-        this._inner.start().schedule();
+        this._inner.start().schedule_async();
     }
 
     keyboardInterrupt(){

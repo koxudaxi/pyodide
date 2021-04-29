@@ -439,6 +439,11 @@ globalThis.loadPyodide = async function(config = {}) {
    */
   Module.registerComlink = function(Comlink){
     Module.Comlink = Comlink;
+    Module.runPythonSimple(
+      "from pyodide_js._module import Comlink ; " +
+      "from _pyodide.syncify import ComlinkSyncifier, set_syncifier ; " +
+      "set_syncifier(ComlinkSyncifier(Comlink.Syncifier))"
+    )
   };
 
   let fatal_error_occurred = false;
