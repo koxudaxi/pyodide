@@ -63,7 +63,7 @@ _Py_IDENTIFIER(__await__);
 _Py_IDENTIFIER(__dir__);
 
 static PyObject* asyncio_get_event_loop;
-static PyObject* remote_future;
+static PyObject* ComlinkTask;
 static PyTypeObject* PyExc_BaseException_Type;
 
 ////////////////////////////////////////////////////////////
@@ -699,7 +699,7 @@ JsProxy_Bool(PyObject* o)
 static PyObject*
 JsProxy_RemoteAwait(PyObject* self, PyObject* _args)
 {
-  PyObject* fut = PyObject_CallFunctionObjArgs(remote_future, self, NULL);
+  PyObject* fut = PyObject_CallFunctionObjArgs(ComlinkTask, self, NULL);
   if (fut == NULL) {
     return NULL;
   }
@@ -1783,7 +1783,7 @@ JsProxy_init(PyObject* core_module)
   bool success = false;
 
   PyObject* _pyodide_core = NULL;
-  PyObject* remote = NULL;
+  PyObject* syncify = NULL;
   PyObject* jsproxy_mock = NULL;
   PyObject* asyncio_module = NULL;
 
@@ -1794,10 +1794,10 @@ JsProxy_init(PyObject* core_module)
     _PyObject_CallMethodIdObjArgs(_pyodide_core, &PyId_JsProxy, NULL);
   FAIL_IF_NULL(jsproxy_mock);
 
-  remote = PyImport_ImportModule("_pyodide.remote");
-  FAIL_IF_NULL(remote);
-  remote_future = PyObject_GetAttrString(remote, "RemoteJsProxyFuture");
-  FAIL_IF_NULL(remote_future);
+  syncify = PyImport_ImportModule("_pyodide.syncify");
+  FAIL_IF_NULL(syncify);
+  ComlinkTask = PyObject_GetAttrString(syncify, "ComlinkTask");
+  FAIL_IF_NULL(ComlinkTask);
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in
   // _pyodide._core. set_method_docstring uses
@@ -1836,7 +1836,7 @@ JsProxy_init(PyObject* core_module)
   success = true;
 finally:
   Py_CLEAR(_pyodide_core);
-  Py_CLEAR(remote);
+  Py_CLEAR(syncify);
   Py_CLEAR(jsproxy_mock);
   Py_CLEAR(asyncio_module);
   return success ? 0 : -1;
