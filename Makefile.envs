@@ -98,8 +98,12 @@ export CXXFLAGS_BASE=\
 	-std=c++14
 
 export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
+
+# XXX this branch removes the following two flags for enabling static linking
+# -       -s MAIN_MODULE=1 \
+# -       -s EXPORT_ALL=1 \
+
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
-	-s MAIN_MODULE=1 \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
@@ -110,7 +114,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s FORCE_FILESYSTEM=1 \
 	-s TOTAL_MEMORY=20971520 \
 	-s ALLOW_MEMORY_GROWTH=1 \
-	-s EXPORT_ALL=1 \
 	-s POLYFILL \
 	-s MIN_SAFARI_VERSION=140000 \
 	-s STACK_SIZE=5MB \
