@@ -62,11 +62,17 @@ src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js
 	# Now generate the C file. Define a string __em_js__pyodide_js_init with
 	# contents from tmp.dat
 	rm -f src/core/pyodide_pre.gen.c
+	echo '#include <emscripten.h>' >> src/core/pyodide_pre.gen.c
+	echo 'void pyodide_js_init(void) EM_IMPORT(pyodide_js_init);' >> src/core/pyodide_pre.gen.c
 	echo '__attribute__((used)) __attribute__((section("em_js"), aligned(1)))' >> src/core/pyodide_pre.gen.c
 	echo 'char __em_js__pyodide_js_init[] = {'  >> src/core/pyodide_pre.gen.c
 	cat tmp.dat  | xxd -i - >> src/core/pyodide_pre.gen.c
 	# Add a null byte to terminate the string
 	echo ', 0};' >> src/core/pyodide_pre.gen.c
+	echo 'EMSCRIPTEN_KEEPALIVE' >> src/core/pyodide_pre.gen.c
+	echo 'void foobar(void) {' >> src/core/pyodide_pre.gen.c
+	echo '    pyodide_js_init();' >> src/core/pyodide_pre.gen.c
+	echo '}' >> src/core/pyodide_pre.gen.c
 
 	rm tmp.dat
 	emcc -c src/core/pyodide_pre.gen.c -o src/core/pyodide_pre.o

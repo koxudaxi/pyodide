@@ -263,6 +263,8 @@ export async function loadPyodide(
   const config = Object.assign(default_config, options) as ConfigType;
 
   const Module = createModule();
+  // @ts-ignore
+  globalThis.Module = Module;
   Module.print = config.stdout;
   Module.printErr = config.stderr;
   Module.arguments = config.args;
