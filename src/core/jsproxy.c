@@ -2555,8 +2555,7 @@ JsObjMap_GetIter(PyObject* self)
 EM_JS_NUM(int, JsObjMap_length_js, (JsRef idobj), {
   let jsobj = Hiwire.get_value(idobj);
   let length = 0;
-  let x;
-  for (x of Module.iterObject(jsobj)) {
+  for (let _ of Module.iterObject(jsobj)) {
     length++;
   }
   return length;
