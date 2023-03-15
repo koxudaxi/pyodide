@@ -55,7 +55,8 @@ EM_JS(void,
 EM_JS(void, _python2js_handle_postprocess_list, (JsRef idlist, JsRef idcache), {
   const list = Hiwire.get_value(idlist);
   const cache = Hiwire.get_value(idcache);
-  for (const[parent, key, value] of list) {
+  let parent, key, value;
+  for ([parent, key, value] of list) {
     let out_value = Hiwire.get_value(cache.get(value));
     // clang-format off
     if(parent.constructor.name === "Map"){
@@ -466,7 +467,8 @@ int, _python2js_add_to_cache,
 
 EM_JS(void, _python2js_destroy_cache, (JsRef cacheid), {
   const cache = Hiwire.get_value(cacheid);
-  for (const[k, v] of cache.entries()) {
+  let k, v;
+  for ([k, v] of cache.entries()) {
     Hiwire.decref(v);
   }
 });
