@@ -42,7 +42,7 @@ _js2python_pyproxy(PyObject* val)
   return val;
 }
 
-EM_JS_REF(PyObject*, js2python, (JsRef id), {
+EM_JS_REF(PyObject*, _real_js2python, (JsRef id), {
   let value = Hiwire.get_value(id);
   let result = Module.js2python_convertImmutable(value, id);
   // clang-format off
@@ -52,6 +52,11 @@ EM_JS_REF(PyObject*, js2python, (JsRef id), {
   }
   return _JsProxy_create(id);
 })
+
+// XXX workaround for https://github.com/emscripten-core/emscripten/issues/18957
+PyObject* js2python(JsRef id) {
+    return _real_js2python(id);
+}
 
 /**
  * Convert a JavaScript object to Python to a given depth. This is the

@@ -617,7 +617,7 @@ EM_JS_REF(JsRef, _JsArray_PostProcess_helper, (JsRef jscontext, JsRef array), {
 // clang-format off
 EM_JS_REF(
 JsRef,
-python2js__default_converter,
+_real_python2js__default_converter,
 (JsRef jscontext, PyObject* object),
 {
   let context = Hiwire.get_value(jscontext);
@@ -631,6 +631,11 @@ python2js__default_converter,
   return Hiwire.new_value(result);
 })
 // clang-format on
+
+// XXX workaround for https://github.com/emscripten-core/emscripten/issues/18957
+JsRef python2js__default_converter(JsRef jscontext, PyObject* object) {
+    return _real_python2js__default_converter(jscontext, object);
+}
 
 static JsRef
 _JsArray_PostProcess(ConversionContext context, JsRef array)
