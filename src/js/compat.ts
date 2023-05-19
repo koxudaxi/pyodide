@@ -2,7 +2,7 @@
 declare var process: any;
 declare var Deno: any;
 
-export const IN_DENO = typeof Deno !== undefined;
+export const IN_DENO = typeof Deno !== "undefined";
 export const IN_NODE =
   IN_DENO ||
   (typeof process === "object" &&
