@@ -873,7 +873,14 @@ workflows:
 
       - test-cmdline-runner:
           requires:
-            - build-packages
+            - build-packages-no-numpy-dependents
+          filters:
+            tags:
+              only: /.*/
+
+      - test-cmdline-runner-deno:
+          requires:
+            - build-packages-no-numpy-dependents
           filters:
             tags:
               only: /.*/
