@@ -1,5 +1,5 @@
 #!/bin/bash
-":"; /* << "EOF"
+":" /* << "EOF"
 This file is a bash/node polyglot.
 
 We have to use a bit of bash code to set up the deno permissions / command line args.
