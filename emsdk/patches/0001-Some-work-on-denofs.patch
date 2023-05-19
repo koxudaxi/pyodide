@@ -1,0 +1,133 @@
+From 08d41d888ed7f2f753f2e87c9eb4cc71d6c9dd6c Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 17 May 2023 13:09:59 -0700
+Subject: [PATCH] Some work on denofs
+
+---
+ src/library_nodefs.js | 22 +++++++++++++++-------
+ src/preamble.js       |  6 +++++-
+ src/shell.js          | 20 +++++++++++++++-----
+ 3 files changed, 35 insertions(+), 13 deletions(-)
+
+diff --git a/src/library_nodefs.js b/src/library_nodefs.js
+index 97f9f3fb7..5f4d2692b 100644
+--- a/src/library_nodefs.js
++++ b/src/library_nodefs.js
+@@ -6,15 +6,16 @@
+ 
+ mergeInto(LibraryManager.library, {
+   $NODEFS__deps: ['$FS', '$PATH', '$ERRNO_CODES', '$mmapAlloc'],
+-  $NODEFS__postset: 'if (ENVIRONMENT_IS_NODE) { NODEFS.staticInit(); }',
++  $NODEFS__postset: 'if (ENVIRONMENT_IS_NODE || ENVIRONMENT_IS_DENO) { NODEFS.staticInit(); }',
+   $NODEFS: {
+     isWindows: false,
+     staticInit: () => {
+       NODEFS.isWindows = !!process.platform.match(/^win/);
+-      var flags = process.binding("constants");
+-      // Node.js 4 compatibility: it has no namespaces for constants
+-      if (flags["fs"]) {
+-        flags = flags["fs"];
++      let flags;
++      if (ENVIRONMENT_IS_DENO) {
++        flags = require("node:fs").constants;
++      } else {
++        flags = process.binding("constants");
+       }
+       NODEFS.flagsForNodeMap = {
+         "{{{ cDefine('O_APPEND') }}}": flags["O_APPEND"],
+@@ -99,6 +100,9 @@ mergeInto(LibraryManager.library, {
+       if (flags) {
+         throw new FS.ErrnoError({{{ cDefine('EINVAL') }}});
+       }
++      if (ENVIRONMENT_IS_DENO && newFlags === 0) {
++        newFlags = NODEFS.flagsForNodeMap["O_RDONLY"];
++      }
+       return newFlags;
+     },
+     node_ops: {
+@@ -264,14 +268,18 @@ mergeInto(LibraryManager.library, {
+         // Node.js < 6 compatibility: node errors on 0 length reads
+         if (length === 0) return 0;
+         try {
+-          return fs.readSync(stream.nfd, Buffer.from(buffer.buffer), offset, length, position);
++          if(ENVIRONMENT_IS_DENO) {
++            return fs.readSync(stream.nfd, buffer.subarray(offset, offset + length), {position});
++          } else {
++            return fs.readSync(stream.nfd, buffer, offset, length, position);
++          }
+         } catch (e) {
+           throw new FS.ErrnoError(NODEFS.convertNodeCode(e));
+         }
+       },
+       write: (stream, buffer, offset, length, position) => {
+         try {
+-          return fs.writeSync(stream.nfd, Buffer.from(buffer.buffer), offset, length, position);
++          return fs.writeSync(stream.nfd, buffer, offset, length, position);
+         } catch (e) {
+           throw new FS.ErrnoError(NODEFS.convertNodeCode(e));
+         }
+diff --git a/src/preamble.js b/src/preamble.js
+index f0ffc8817..965fb12d0 100644
+--- a/src/preamble.js
++++ b/src/preamble.js
+@@ -884,7 +884,11 @@ function instantiateAsync(binary, binaryFile, imports, callback) {
+       !ENVIRONMENT_IS_NODE &&
+ #endif
+       typeof fetch == 'function') {
+-    return fetch(binaryFile, {{{ makeModuleReceiveExpr('fetchSettings', "{ credentials: 'same-origin' }") }}}).then(function(response) {
++    if(ENVIRONMENT_IS_DENO) {
++      const path = require('node:path');
++      binaryFile = "file://" + path.resolve(binaryFile);
++    }
++    return fetch(binaryFile, {{{ makeModuleReceiveExpr('fetchSettings', "{ credentials: 'same-origin' }") }}}).then((response) => {
+       // Suppress closure warning here since the upstream definition for
+       // instantiateStreaming only allows Promise<Repsponse> rather than
+       // an actual Response.
+diff --git a/src/shell.js b/src/shell.js
+index 33763dec4..2bdca3af9 100644
+--- a/src/shell.js
++++ b/src/shell.js
+@@ -112,7 +112,9 @@ var ENVIRONMENT_IS_WEB = typeof window == 'object';
+ var ENVIRONMENT_IS_WORKER = typeof importScripts == 'function';
+ // N.b. Electron.js environment is simultaneously a NODE-environment, but
+ // also a web environment.
+-var ENVIRONMENT_IS_NODE = typeof process == 'object' && typeof process.versions == 'object' && typeof process.versions.node == 'string';
++var ENVIRONMENT_IS_DENO = typeof Deno == "object";
++var ENVIRONMENT_IS_NODE = !ENVIRONMENT_IS_DENO && typeof process == 'object' && typeof process.versions == 'object' && typeof process.versions.node == 'string';
++
+ #if AUDIO_WORKLET
+ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER && !ENVIRONMENT_IS_AUDIO_WORKLET;
+ #else
+@@ -173,6 +175,18 @@ var read_,
+     setWindowTitle;
+ 
+ #if ENVIRONMENT_MAY_BE_NODE
++// `require()` is no-op in an ESM module, use `createRequire()` to construct
++// the require()` function.  This is only necessary for multi-environment
++// builds, `-sENVIRONMENT=node` emits a static import declaration instead.
++// TODO: Swap all `require()`'s with `import()`'s?
++if(ENVIRONMENT_IS_DENO) {
++  var fs = require("node:fs");
++  var nodePath = require("node:path");
++  if (process.argv.length > 1) {
++    thisProgram = process.argv[1].replace(/\\/g, "/");
++  }
++}
++
+ if (ENVIRONMENT_IS_NODE) {
+ #if ENVIRONMENT && ASSERTIONS
+   if (typeof process == 'undefined' || !process.release || process.release.name !== 'node') throw new Error('not compiled for this environment (did you build to HTML and try to run it not on the web, or set ENVIRONMENT to something - like node - and run it someplace else - like on the web?)');
+@@ -188,10 +202,6 @@ if (ENVIRONMENT_IS_NODE) {
+   }
+ #endif
+ 
+-  // `require()` is no-op in an ESM module, use `createRequire()` to construct
+-  // the require()` function.  This is only necessary for multi-environment
+-  // builds, `-sENVIRONMENT=node` emits a static import declaration instead.
+-  // TODO: Swap all `require()`'s with `import()`'s?
+ #if EXPORT_ES6 && ENVIRONMENT_MAY_BE_WEB
+   const { createRequire } = await import('module');
+   /** @suppress{duplicate} */
+-- 
+2.25.1
+
