@@ -1,4 +1,4 @@
-From 08d41d888ed7f2f753f2e87c9eb4cc71d6c9dd6c Mon Sep 17 00:00:00 2001
+From a33e80fa8e366dc51db03b99778ca76288fbe8fc Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 17 May 2023 13:09:59 -0700
 Subject: [PATCH] Some work on denofs
@@ -10,7 +10,7 @@ Subject: [PATCH] Some work on denofs
  3 files changed, 35 insertions(+), 13 deletions(-)
 
 diff --git a/src/library_nodefs.js b/src/library_nodefs.js
-index 97f9f3fb7..5f4d2692b 100644
+index 97f9f3fb7..36da07c69 100644
 --- a/src/library_nodefs.js
 +++ b/src/library_nodefs.js
 @@ -6,15 +6,16 @@
@@ -31,7 +31,7 @@ index 97f9f3fb7..5f4d2692b 100644
 +      if (ENVIRONMENT_IS_DENO) {
 +        flags = require("node:fs").constants;
 +      } else {
-+        flags = process.binding("constants");
++        flags = process.binding("constants")["fs"];
        }
        NODEFS.flagsForNodeMap = {
          "{{{ cDefine('O_APPEND') }}}": flags["O_APPEND"],
