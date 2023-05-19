@@ -107,10 +107,10 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
         # python-host but we want the shebang of the executable that we install
         # to point to Pyodide python. We monkeypatch distlib.scripts.get_executable
         # to return the value with the host suffix removed.
-        """
+        f"""
         from pip._vendor.distlib import scripts
         def get_executable():
-            return sys.executable.removesuffix("-host")
+            return sys.executable.removesuffix("{get_pyversion()}-host")
 
         scripts.get_executable = get_executable
         """
