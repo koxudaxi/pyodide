@@ -112,6 +112,7 @@ async function loadPyodideHandleEarlyExit() {
 
 async function main() {
   let py = await loadPyodideHandleEarlyExit();
+  py._api.on_fatal = () => process.exit(1);
   py.setStdout();
   py.setStderr();
   let sideGlobals = py.runPython("{}");
