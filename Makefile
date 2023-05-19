@@ -187,7 +187,7 @@ dist/test.html: src/templates/test.html
 dist/module_test.html: src/templates/module_test.html
 	cp $< $@
 
-dist/python: src/templates/python-deno
+dist/python: src/templates/python
 	cp $< $@
 
 .PHONY: dist/console.html
