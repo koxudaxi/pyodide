@@ -449,8 +449,9 @@ jobs:
       - run:
           name: install deno
           command: |
-            wget https://deno.land/x/install/install.sh
-            bash install.sh
+            apt update
+            apt install curl
+            curl -fsSL https://deno.land/x/install/install.sh | sh
             cp src/templates/python-deno dist/python
 
       - run:
