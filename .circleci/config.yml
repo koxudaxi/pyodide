@@ -450,7 +450,7 @@ jobs:
           name: install deno
           command: |
             apt update
-            apt install curl
+            apt install curl -y
             curl -fsSL https://deno.land/x/install/install.sh | sh
             cp src/templates/python-deno dist/python
 
