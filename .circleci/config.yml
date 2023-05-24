@@ -480,7 +480,7 @@ jobs:
             pip install dist/*.whl
             cd ../attrs
             pip install .[tests]
-            pip uninstall pytest-mypy-plugins
+            pip uninstall -y pytest-mypy-plugins
             DENO_OPTIONS="--allow-write=.hypothesis,.pytest_cache" pytest -k 'not mypy'
 
   benchmark:
