@@ -8,38 +8,65 @@ package:
 source:
   sha256: $(PYTHON_ARCHIVE_SHA256)
   url: $(PYTHON_ARCHIVE_URL)
-  patches:
-    - patches/0005-gh-93839-Move-Lib-ctypes-test-to-Lib-test-test_ctype.patch
-    - patches/0006-gh-93839-Move-Lib-unttest-test-to-Lib-test-test_unit.patch
-    - patches/0007-gh-93839-Use-load_package_tests-for-testmock-GH-9405.patch
-    - patches/0008-Move-test-directories.patch
 build:
   type: cpython_module
   script: |
     export TEST_EXTENSIONS="\
       _testinternalcapi.so \
-      _testcapi.so \
       _testbuffer.so \
       _testimportmultiple.so \
       _testmultiphase.so \
       _ctypes_test.so \
     "
 
+    CAPI_FILES=(\
+      _testcapimodule.c               \
+      _testcapi/buffer.c              \
+      _testcapi/code.c                \
+      _testcapi/datetime.c            \
+      _testcapi/docstring.c           \
+      _testcapi/exceptions.c          \
+      _testcapi/float.c               \
+      _testcapi/gc.c                  \
+      _testcapi/getargs.c             \
+      _testcapi/heaptype.c            \
+      _testcapi/heaptype_relative.c   \
+      _testcapi/immortal.c            \
+      _testcapi/long.c                \
+      _testcapi/mem.c                 \
+      _testcapi/pyos.c                \
+      _testcapi/pytime.c              \
+      _testcapi/structmember.c        \
+      _testcapi/unicode.c             \
+      _testcapi/vectorcall.c          \
+      _testcapi/vectorcall_limited.c  \
+      _testcapi/watchers.c            \
+    )
+
+
     export TEST_MODULE_CFLAGS="${SIDE_MODULE_CFLAGS} -I Include/ -I Include/internal/ -I ."
 
-    emcc ${TEST_MODULE_CFLAGS} -c Modules/_testinternalcapi.c -o Modules/_testinternalcapi.o \
-          -DPy_BUILD_CORE_MODULE
-    emcc ${TEST_MODULE_CFLAGS} -c Modules/_testcapimodule.c -o Modules/_testcapi.o
-    emcc ${TEST_MODULE_CFLAGS} -c Modules/_testbuffer.c -o Modules/_testbuffer.o
-    emcc ${TEST_MODULE_CFLAGS} -c Modules/_testimportmultiple.c -o Modules/_testimportmultiple.o
-    emcc ${TEST_MODULE_CFLAGS} -c Modules/_testmultiphase.c -o Modules/_testmultiphase.o
-    emcc ${TEST_MODULE_CFLAGS} -c Modules/_ctypes/_ctypes_test.c -o Modules/_ctypes_test.o
+    emcc ${TEST_MODULE_CFLAGS} -c Modules/_testinternalcapi.c -DPy_BUILD_CORE_MODULE
+    emcc ${TEST_MODULE_CFLAGS} -c Modules/_testbuffer.c
+    emcc ${TEST_MODULE_CFLAGS} -c Modules/_testimportmultiple.c
+    emcc ${TEST_MODULE_CFLAGS} -c Modules/_testmultiphase.c
+    emcc ${TEST_MODULE_CFLAGS} -c Modules/_ctypes/_ctypes_test.c
+
+    for file in ${CAPI_FILES[@]}; do \
+      echo emcc ${TEST_MODULE_CFLAGS} -c Modules/$file -o Modules/${file/.c/.o}
+      emcc ${TEST_MODULE_CFLAGS} -c Modules/$file -o Modules/${file/.c/.o}
+    done
+
+    # prepend Modules/ to each file
+    TMP=${CAPI_FILES[@]/#/Modules/}
+    echo $TMP
+
+    emcc ${TMP//.c/.o} -o ${DISTDIR}/_testcapi.so ${SIDE_MODULE_LDFLAGS}
 
     for testname in ${TEST_EXTENSIONS}; do \
-      emcc Modules/${testname/.so/.o} -o ${DISTDIR}/$testname ${SIDE_MODULE_LDFLAGS}
+      emcc ${testname/.so/.o} -o ${DISTDIR}/$testname ${SIDE_MODULE_LDFLAGS}
     done
 
     cd Lib && \
-      tar --exclude=__pycache__ -cf - \
-      test distutils/tests sqlite3/test \
+      tar --exclude=__pycache__ -cf - test \
       | tar -C $DISTDIR -xf -
