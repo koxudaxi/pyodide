@@ -146,7 +146,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-legl.js \
 	-lwebgl.js \
 	-lhtml5_webgl.js \
-	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
+	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0 \
+	cpython/build/Python-3.12.0b2/Modules/_hacl/libHacl_Hash_SHA2.a
 
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
