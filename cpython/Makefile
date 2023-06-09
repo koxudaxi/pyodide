@@ -16,10 +16,14 @@ LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
-
 $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 	( \
 		cd $(BUILD); \
+		\
+			_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) \
+			_PYTHON_PROJECT_BASE=$(BUILD) \
+			$(HOSTPYTHON) -m sysconfig --generate-posix-vars \
+		\
 		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
 		sed -i '/MODOBJS=/s/$$/ $$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS) /' Makefile; \
 		touch $(BUILD)/$(LIB) ; \
@@ -28,15 +32,13 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 	)
 	# Generate sysconfigdata. It outputs into a subfolder of build/, and
 	# the subfolder is written to pybuilddir.txt.
-	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(HOSTPYTHON) -m sysconfig --generate-posix-vars
 
-	$(eval PYBUILDDIR=`cat pybuilddir.txt`)
+	$(eval PYBUILDDIR=$(BUILD)/`cat $(BUILD)/pybuilddir.txt`)
+	PYTHONPATH=$(PYBUILDDIR) python -c 'import os; print(os.environ["PYTHONPATH"])'
 	PYTHONPATH=$(PYBUILDDIR) python adjust_sysconfig.py
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	mkdir -p $(SYSCONFIGDATA_DIR)
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
-	rm -rf $(PYBUILDDIR)
-	rm pybuilddir.txt
 
 
 clean:
@@ -50,7 +52,11 @@ clean-all: clean
 $(TARBALL):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
 	wget -q -O $@ $(PYTHON_ARCHIVE_URL)
-	shasum --algorithm 256 $(TARBALL) | grep -q $(PYTHON_ARCHIVE_SHA256)
+	shasum --algorithm 256 $(TARBALL) | grep -q $(PYTHON_ARCHIVE_SHA256) \
+		|| (\
+			echo -n "Shasum mismatch: " \
+			&& shasum --algorithm 256 $(TARBALL) \
+		)
 
 
 $(BUILD)/.patched: $(TARBALL)
@@ -97,7 +103,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(BUILD)/config.guess) \
 			  --prefix=$(INSTALL)  \
-			  --with-build-python=$$(which python3.11) \
+			  --with-build-python=$$(which python3.12) \
 	)
 
 
