@@ -1,3 +1,4 @@
+  greenlet @ git+https://github.com/mdboom/greenlet@82f9a8869d88616decb777bc6afae3a751a4a9c0
   # build
   cmake
   ruamel.yaml
