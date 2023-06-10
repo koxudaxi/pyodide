@@ -8,9 +8,12 @@ package:
 source:
   sha256: $(PYTHON_ARCHIVE_SHA256)
   url: $(PYTHON_ARCHIVE_URL)
+  patches:
+    - patches/0006-Catch-permission-error-in-test.patch
 build:
   type: cpython_module
   script: |
+    pwd
     export TEST_EXTENSIONS="\
       _testinternalcapi.so \
       _testbuffer.so \
@@ -53,7 +56,6 @@ build:
     emcc ${TEST_MODULE_CFLAGS} -c Modules/_ctypes/_ctypes_test.c
 
     for file in ${CAPI_FILES[@]}; do \
-      echo emcc ${TEST_MODULE_CFLAGS} -c Modules/$file -o Modules/${file/.c/.o}
       emcc ${TEST_MODULE_CFLAGS} -c Modules/$file -o Modules/${file/.c/.o}
     done
 

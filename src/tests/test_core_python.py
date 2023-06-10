@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 import yaml
-from yaml import CLoader as Loader
+from yaml import Loader as Loader
 
 
 def filter_info(info: dict[str, Any], browser: str) -> dict[str, Any]:
