@@ -2138,7 +2138,9 @@ JsMap_get(PyObject* self,
           PyObject* kwnames)
 {
   static const char* const _keywords[] = { "key", "default", 0 };
-  static struct _PyArg_Parser _parser = { .format="O|O:get", .keywords=_keywords, 0 };
+  static struct _PyArg_Parser _parser = { .format = "O|O:get",
+                                          .keywords = _keywords,
+                                          0 };
   PyObject* key;
   PyObject* default_ = Py_None;
   if (!_PyArg_ParseStackAndKeywords(
@@ -2168,7 +2170,9 @@ JsMap_pop(PyObject* self,
           PyObject* kwnames)
 {
   static const char* const _keywords[] = { "key", "default", 0 };
-  static struct _PyArg_Parser _parser = { .format="O|O:pop", .keywords=_keywords, 0 };
+  static struct _PyArg_Parser _parser = { .format = "O|O:pop",
+                                          .keywords = _keywords,
+                                          0 };
   PyObject* key;
   PyObject* default_ = NULL;
   if (!_PyArg_ParseStackAndKeywords(
@@ -2282,7 +2286,9 @@ JsMap_setdefault(PyObject* self,
                  PyObject* kwnames)
 {
   static const char* const _keywords[] = { "key", "default", 0 };
-  static struct _PyArg_Parser _parser = { .format="O|O:setdefault", .keywords=_keywords, 0 };
+  static struct _PyArg_Parser _parser = { .format = "O|O:setdefault",
+                                          .keywords = _keywords,
+                                          0 };
   PyObject* key;
   PyObject* default_ = Py_None;
   if (!_PyArg_ParseStackAndKeywords(
@@ -2383,7 +2389,9 @@ JsProxy_toPy(PyObject* self,
              PyObject* kwnames)
 {
   static const char* const _keywords[] = { "depth", "default_converter", 0 };
-  static struct _PyArg_Parser _parser = { .format="|$iO:to_py", .keywords=_keywords, 0 };
+  static struct _PyArg_Parser _parser = { .format = "|$iO:to_py",
+                                          .keywords = _keywords,
+                                          0 };
   int depth = -1;
   PyObject* default_converter = NULL;
   if (!_PyArg_ParseStackAndKeywords(
@@ -2647,7 +2655,9 @@ JsProxy_as_object_map(PyObject* self,
                       PyObject* kwnames)
 {
   static const char* const _keywords[] = { "hereditary", 0 };
-  static struct _PyArg_Parser _parser = { .format="|$p:as_object_map", .keywords=_keywords, 0 };
+  static struct _PyArg_Parser _parser = { .format = "|$p:as_object_map",
+                                          .keywords = _keywords,
+                                          0 };
   bool hereditary = false;
   if (!_PyArg_ParseStackAndKeywords(
         args, nargs, kwnames, &_parser, &hereditary)) {
@@ -3626,7 +3636,9 @@ JsBuffer_tostring(PyObject* self,
                   PyObject* kwnames)
 {
   static const char* const _keywords[] = { "encoding", 0 };
-  static struct _PyArg_Parser _parser = { .format="|s:to_string", .keywords=_keywords, 0 };
+  static struct _PyArg_Parser _parser = { .format = "|s:to_string",
+                                          .keywords = _keywords,
+                                          0 };
   char* encoding = NULL;
   if (!_PyArg_ParseStackAndKeywords(
         args, nargs, kwnames, &_parser, &encoding)) {

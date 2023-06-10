@@ -110,15 +110,15 @@ static PyObject* asyncio;
 // Taken from genobject.c
 // For checking whether an object is awaitable.
 static int
-gen_is_coroutine(PyObject *o)
+gen_is_coroutine(PyObject* o)
 {
-    if (PyGen_CheckExact(o)) {
-        PyCodeObject *code = PyGen_GetCode((PyGenObject*)o);
-        if (code->co_flags & CO_ITERABLE_COROUTINE) {
-            return 1;
-        }
+  if (PyGen_CheckExact(o)) {
+    PyCodeObject* code = PyGen_GetCode((PyGenObject*)o);
+    if (code->co_flags & CO_ITERABLE_COROUTINE) {
+      return 1;
     }
-    return 0;
+  }
+  return 0;
 }
 /**
  * Do introspection on the python object to work out which abstract protocols it
@@ -1364,7 +1364,9 @@ create_proxy(PyObject* self,
   bool capture_this = false;
   bool roundtrip = true;
   PyObject* obj;
-  static struct _PyArg_Parser _parser = { .format="O|$pp:create_proxy", .keywords=_keywords, 0 };
+  static struct _PyArg_Parser _parser = { .format = "O|$pp:create_proxy",
+                                          .keywords = _keywords,
+                                          0 };
   if (!_PyArg_ParseStackAndKeywords(
         args, nargs, kwnames, &_parser, &obj, &capture_this, &roundtrip)) {
     return NULL;
