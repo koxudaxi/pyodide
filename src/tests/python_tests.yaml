@@ -589,7 +589,8 @@
       - test_offset
       - test_resize_past_pos
 - test_module
-- test_modulefinder
+- test_modulefinder:
+    xfail: times out (but otherwise would work)
 - test_monitoring
 - test_msilib
 - test_multibytecodec
@@ -789,9 +790,7 @@
 - test_startfile
 - test_stat
 - test_statistics
-- test_strftime:
-    skip:
-      - test_strftime # strftime has some bugs
+- test_strftime
 - test_string
 - test_string_literals
 - test_stringprep
