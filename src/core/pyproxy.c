@@ -1364,9 +1364,10 @@ create_proxy(PyObject* self,
   bool capture_this = false;
   bool roundtrip = true;
   PyObject* obj;
-  static struct _PyArg_Parser _parser = { .format = "O|$pp:create_proxy",
-                                          .keywords = _keywords,
-                                          0 };
+  static struct _PyArg_Parser _parser = {
+    .format = "O|$pp:create_proxy",
+    .keywords = _keywords,
+  };
   if (!_PyArg_ParseStackAndKeywords(
         args, nargs, kwnames, &_parser, &obj, &capture_this, &roundtrip)) {
     return NULL;

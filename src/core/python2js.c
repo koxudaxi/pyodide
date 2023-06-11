@@ -781,8 +781,7 @@ to_js(PyObject* self,
   //      default_converter.
   //         :to_js - name of this function for error messages
   static struct _PyArg_Parser _parser = { .format = "O|$ipOOO:to_js",
-                                          .keywords = _keywords,
-                                          0 };
+                                          .keywords = _keywords };
   if (!_PyArg_ParseStackAndKeywords(args,
                                     nargs,
                                     kwnames,
