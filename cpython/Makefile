@@ -56,6 +56,7 @@ $(TARBALL):
 		|| (\
 			echo -n "Shasum mismatch: " \
 			&& shasum --algorithm 256 $(TARBALL) \
+			&& exit 1
 		)
 
 
