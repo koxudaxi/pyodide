@@ -67,7 +67,7 @@ const config = ({ input, output, format, name: globalName }) => ({
     "ws",
   ],
   define: DEFINES,
-  minify: !DEBUG,
+  minify: false,
   keepNames: true,
   sourcemap: true,
   bundle: true,

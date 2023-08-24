@@ -227,18 +227,38 @@ export function initializeFileSystem(Module: Module, config: ConfigType) {
   Module.preRun.push(() => initializeNativeFS(Module));
 }
 
-export function preloadWasm(Module: Module, indexURL: string) {
-  if (SOURCEMAP) {
-    // According to the docs:
-    //
-    // "Sanitizers or source map is currently not supported if overriding
-    // WebAssembly instantiation with Module.instantiateWasm."
-    // https://emscripten.org/docs/api_reference/module.html?highlight=instantiatewasm#Module.instantiateWasm
-    return;
+async function instantiateResponse(
+  arg:
+    | { response: Promise<Response>; binary?: undefined }
+    | { response?: undefined; binary: Promise<Uint8Array> },
+  imports: any,
+): Promise<WebAssembly.WebAssemblyInstantiatedSource> {
+  const { response, binary } = arg;
+  if (response) {
+    return WebAssembly.instantiateStreaming(response, imports);
+  } else {
+    return WebAssembly.instantiate(await binary, imports);
   }
-  const { binary, response } = getBinaryResponse(
-    indexURL! + "pyodide.asm.wasm",
+}
+
+export function preloadWasm(Module: Module, indexURL: string): Promise<void> {
+  // if (SOURCEMAP) {
+  //   // According to the docs:
+  //   //
+  //   // "Sanitizers or source map is currently not supported if overriding
+  //   // WebAssembly instantiation with Module.instantiateWasm."
+  //   // https://emscripten.org/docs/api_reference/module.html?highlight=instantiatewasm#Module.instantiateWasm
+  //   return Promise.resolve();
+  // }
+  const mainResp = getBinaryResponse(indexURL! + "pyodide.asm.wasm");
+  const deferredResp = getBinaryResponse(
+    indexURL! + "pyodide.asm.deferred.wasm",
   );
+  let resolve: () => void, reject: (reason: any) => void;
+  const resultPromise: Promise<void> = new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
   Module.instantiateWasm = function (
     imports: { [key: string]: any },
     successCallback: (
@@ -248,13 +268,10 @@ export function preloadWasm(Module: Module, indexURL: string) {
   ) {
     (async function () {
       try {
-        let res: WebAssembly.WebAssemblyInstantiatedSource;
-        if (response) {
-          res = await WebAssembly.instantiateStreaming(response, imports);
-        } else {
-          res = await WebAssembly.instantiate(await binary, imports);
-        }
-        const { instance, module } = res;
+        const { instance, module } = await instantiateResponse(
+          mainResp,
+          imports,
+        );
         // When overriding instantiateWasm, in asan builds, we also need
         // to take care of creating the WasmOffsetConverter
         // @ts-ignore
@@ -263,12 +280,18 @@ export function preloadWasm(Module: Module, indexURL: string) {
           wasmOffsetConverter = new WasmOffsetConverter(wasmBinary, module);
         }
         successCallback(instance, module);
+        await instantiateResponse(deferredResp, {
+          primary: (Module as any).asm,
+        });
+        resolve();
       } catch (e) {
         console.warn("wasm instantiation failed!");
         console.warn(e);
+        reject(e);
       }
     })();
 
     return {}; // Compiling asynchronously, no exports.
   };
+  return resultPromise;
 }

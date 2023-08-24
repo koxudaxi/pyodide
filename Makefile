@@ -264,6 +264,9 @@ rust:
 
 FORCE:
 
+codesplit:
+	node profile_code_split.mjs
+	./emsdk/emsdk/upstream/bin/wasm-split --enable-mutable-globals --export-prefix=% dist/pyodide.asm.wasm.orig -o1 dist/pyodide.asm.wasm -o2 dist/pyodide.asm.deferred.wasm --profile=profile.data
 
 check:
 	./tools/dependency-check.sh

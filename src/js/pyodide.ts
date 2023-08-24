@@ -188,6 +188,7 @@ export type ConfigType = {
   jsglobals?: object;
   args: string[];
   _node_mounts: string[];
+  _profiling?: boolean;
   env: { [key: string]: string };
 };
 
@@ -296,6 +297,10 @@ export async function loadPyodide(
      * @ignore
      */
     _node_mounts?: string[];
+    /**
+     * @ignore
+     */
+    _profiling?: boolean;
   } = {},
 ): Promise<PyodideInterface> {
   await initNodeModules();
@@ -339,7 +344,9 @@ export async function loadPyodide(
   const API: any = { config };
   Module.API = API;
 
-  preloadWasm(Module, indexURL);
+  const deferredWasm = config._profiling
+    ? Promise.resolve()
+    : preloadWasm(Module, indexURL);
   initializeFileSystem(Module, config);
 
   const moduleLoaded = new Promise((r) => (Module.postRun = r));
@@ -413,5 +420,6 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     await pyodide.loadPackage(API.lockfile_unvendored_stdlibs);
   }
   API.initializeStreams(config.stdin, config.stdout, config.stderr);
+  await deferredWasm;
   return pyodide;
 }

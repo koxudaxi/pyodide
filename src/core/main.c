@@ -43,6 +43,33 @@ finally:
   }
 }
 
+EM_JS(void, write_profile_js, (), {
+  var __write_profile = Module.asm.__write_profile;
+  if (!__write_profile) {
+    console.log("No __write_profile func!")
+  }
+  // Get the size of the profile and allocate a buffer for it.
+  var len = __write_profile(0, 0);
+  var ptr = _malloc(len);
+
+  // Write the profile data to the buffer.
+  __write_profile(ptr, len);
+
+  // Write the profile file.
+  var profile_data = new Uint8Array(HEAP8.buffer, ptr, len);
+  const fs = require("fs");
+  fs.writeFileSync('profile.data', profile_data);
+
+  // Free the buffer.
+  _free(ptr);
+});
+
+EMSCRIPTEN_KEEPALIVE void
+write_profile(void)
+{
+  write_profile_js();
+}
+
 PyObject*
 PyInit__pyodide_core(void);
 
