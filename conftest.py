@@ -277,3 +277,96 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
             continue
         res.append(msg)
     return res
+
+
+import ast
+from doctest import DocTestRunner
+from pathlib import Path
+
+import pytest
+from pytest_pyodide import run_in_pyodide
+from pytest_pyodide.hook import ORIGINAL_MODULE_ASTS
+
+ORIGINAL_MODULE_ASTS[__file__] = ast.parse(
+    Path(__file__).read_bytes(), filename=__file__
+)
+
+INNER = None
+orig_DocTestRunner_run = DocTestRunner.run
+
+
+def _init_run_doctest_in_pyodide_inner():
+    @run_in_pyodide(pytest_assert_rewrites=False, packages=["pytest"])
+    def run_doctest_in_pyodide_inner(
+        selenium, optionflags, continue_on_failure, test, compileflags, out, clear_globs
+    ):
+        from doctest import DocTestFailure
+
+        from _pytest.doctest import _get_checker, _get_runner
+
+        self = _get_runner(
+            verbose=False,
+            optionflags=optionflags,
+            checker=_get_checker(),
+            continue_on_failure=continue_on_failure,
+        )
+        try:
+            return self.run(test, compileflags, out, clear_globs)
+        except DocTestFailure:
+            test.globs = {}
+            raise
+
+    return run_doctest_in_pyodide_inner
+
+
+def get_run_doctest_in_pyodide_inner():
+    global INNER
+    if INNER is None:
+        INNER = _init_run_doctest_in_pyodide_inner()
+    return INNER
+
+
+from _pytest.compat import get_real_func
+from _pytest.fixtures import NOTSET, FixtureDef, getfixturemarker
+
+
+def fill_in_runtime_fixture(request):
+    @pytest.fixture(scope="module")
+    def runtime():
+        return next(iter(pytest.pyodide_runtimes))
+
+    obj = get_real_func(runtime)
+    marker = getfixturemarker(runtime)
+    fixture_def = FixtureDef(
+        fixturemanager=request._fixturemanager,
+        baseid=NOTSET,
+        func=obj,
+        scope=marker.scope,
+        argname=marker.name,
+        params=marker.params,
+    )
+
+    request._compute_fixture_value(fixture_def)
+    request._fixture_defs["runtime"] = fixture_def
+
+
+def run_doctest_in_pyodide_outer(
+    self, test, compileflags=None, out=None, clear_globs=True
+):
+    if not pytest.pyodide_runtimes:
+        return orig_DocTestRunner_run(self, test, compileflags, out, clear_globs)
+    getfixture = test.globs["getfixture"]
+    fill_in_runtime_fixture(getfixture("request"))
+    selenium = getfixture("selenium")
+
+    test.globs = {}
+    optionflags = self.optionflags
+    continue_on_failure = self.continue_on_failure
+
+    run_inner = get_run_doctest_in_pyodide_inner()
+    return run_inner(
+        selenium, optionflags, continue_on_failure, test, compileflags, out, clear_globs
+    )
+
+
+DocTestRunner.run = run_doctest_in_pyodide_outer

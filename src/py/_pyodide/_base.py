@@ -468,6 +468,8 @@ def eval_code(
     >>> source = "1 + 1"
     >>> eval_code(source)
     2
+    >>> from js import Object; Object
+    None
     >>> source = "1 + 1;"
     >>> eval_code(source, quiet_trailing_semicolon=True)
     >>> eval_code(source, quiet_trailing_semicolon=False)
