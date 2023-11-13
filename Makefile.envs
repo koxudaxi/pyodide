@@ -1,4 +1,4 @@
-export PYVERSION ?= 3.12.0b2
+export PYVERSION ?= 3.12.0a7
 export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.39
 
 export PLATFORM_TRIPLET=wasm32-emscripten
@@ -147,7 +147,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lwebgl.js \
 	-lhtml5_webgl.js \
 	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0 \
-	cpython/build/Python-3.12.0b2/Modules/_hacl/libHacl_Hash_SHA2.a
+	cpython/build/Python-3.12.0a7/Modules/_hacl/libHacl_Streaming_SHA2.a
 
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)

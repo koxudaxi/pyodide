@@ -1,5 +1,5 @@
 FROM node:20.1.0-buster-slim AS node-image
-FROM python:3.12.0b2-slim-buster
+FROM python:3.12.0a7-slim-buster
 
 # Requirements for building packages
 RUN apt-get update \

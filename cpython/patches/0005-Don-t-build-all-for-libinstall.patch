@@ -11,7 +11,7 @@ diff --git a/Makefile.pre.in b/Makefile.pre.in
 index e2adc3cb49..d4ac2dfc28 100644
 --- a/Makefile.pre.in
 +++ b/Makefile.pre.in
-@@ -878,14 +878,6 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
+@@ -837,13 +837,6 @@
  # wasm assets directory is relative to current build dir, e.g. "./usr/local".
  # --preload-file turns a relative asset path into an absolute path.
  
@@ -22,19 +22,15 @@ index e2adc3cb49..d4ac2dfc28 100644
 -	    Makefile pybuilddir.txt Modules/Setup.local
 -	$(PYTHON_FOR_BUILD) $(srcdir)/Tools/wasm/wasm_assets.py \
 -	    --buildroot . --prefix $(prefix)
--
+ 
  python.html: $(srcdir)/Tools/wasm/python.html python.worker.js
  	@cp $(srcdir)/Tools/wasm/python.html $@
+@@ -2126,7 +2119,7 @@
+ COMPILEALL_OPTS=-j0
  
-@@ -2229,7 +2221,7 @@ COMPILEALL_OPTS=-j0
  TEST_MODULES=@TEST_MODULES@
- 
- .PHONY: libinstall
 -libinstall:	all $(srcdir)/Modules/xxmodule.c
 +libinstall: $(srcdir)/Modules/xxmodule.c
  	@for i in $(SCRIPTDIR) $(LIBDEST); \
  	do \
  		if test ! -d $(DESTDIR)$$i; then \
--- 
-2.25.1
-

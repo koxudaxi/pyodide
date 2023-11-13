@@ -169,7 +169,7 @@ if TYPE_CHECKING:
 else:
     APBase = AbstractProvider
 
-PYTHON_VERSION = Version(python_version())
+PYTHON_VERSION = Version('3.12.0a7')  #python_version())
 
 
 def get_target_python():

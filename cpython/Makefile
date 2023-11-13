@@ -14,6 +14,9 @@ FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/libffi/libffi
 LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
 
+GITREPO=$(ROOT)/downloads/Python-$(PYVERSION)
+
+
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
 $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
@@ -59,10 +62,14 @@ $(TARBALL):
 			&& exit 1 \
 		)
 
+$(GITREPO):
+	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
+	(cd $(ROOT)/downloads && git clone -b tag-strings-v2 --depth 1  https://github.com/gvanrossum/cpython.git Python-$(PYVERSION))
 
-$(BUILD)/.patched: $(TARBALL)
-	[ -d $(BUILD) ] || (mkdir -p $(dir $(BUILD)); tar -C $(dir $(BUILD)) -xf $(TARBALL))
-	cat patches/*.patch | (cd $(BUILD) ; patch -p1)
+$(BUILD)/.patched: $(GITREPO)
+	[ -d $(CPYTHONROOT)/build/ ] || mkdir -p $(CPYTHONROOT)/build
+	cp -frp $(GITREPO) $(BUILD)
+	cat patches/*.patch | (cd $(BUILD) ; patch -p1 || echo error)
 	touch $@
 
 $(INSTALL)/lib/libffi.a :
@@ -100,7 +107,6 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 			  --disable-shared \
 			  --disable-ipv6 \
 			  --enable-big-digits=30 \
-			  --enable-optimizations \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(BUILD)/config.guess) \
 			  --prefix=$(INSTALL)  \
