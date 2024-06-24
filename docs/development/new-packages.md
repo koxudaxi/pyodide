@@ -35,6 +35,8 @@ is a Python package without C extensions):
 If however the package has C extensions or its code requires patching, then
 continue to the next steps.
 
+If you are on Windows, you will need to use WSL 2.
+
 ```{note}
 To determine if a package has C extensions, check if its `setup.py` contains
 any compilation commands.
@@ -76,7 +78,7 @@ the directory after you exit the container.
 You should install `pyodide-build`:
 
 ```bash
-pip install -e pyodide-build
+pip install -e ./pyodide-build
 ```
 
 If you want to build the package, you will need to build Python which you can do
@@ -148,9 +150,13 @@ and see if there are any errors.
 
 If the build succeeds you can try to load the package:
 
-1. Serve the dist directory with `python -m http.server --directory ./dist`
-2. Open `localhost:<port>/console.html` and try to import the package
-3. You can test the package in the repl
+1. Build pyodide via `PYODIDE_PACKAGES=tag:core make`.
+2. Serve the dist directory with `python -m http.server --directory ./dist`.
+   If you use docker, you can execute this either outside of the docker container or
+   make sure to forward a port by setting the environment variable
+   PYODIDE_SYSTEM_PORT or starting docker with `./run_docker -p <port>`.
+3. Open `localhost:8000/console.html` and try to import the package.
+4. You can test the package in the repl.
 
 ### Fixing build issues
 
@@ -237,6 +243,21 @@ the `patches` key:
 find patches/ -type f | sed 's/^/    - /g'
 ```
 
+### Upgrading a package
+
+To upgrade a package's version to the latest one available on PyPI, do
+
+```
+pyodide skeleton pypi <package-name> --update
+```
+
+Because this does not handle package dependencies, you have to manually check
+whether the `requirements` section of the `meta.yaml` file needs to be updated
+for updated dependencies.
+
+Upgrading a package's version may lead to new build issues that need to be resolved
+(see above) and any patches need to be checked and potentially migrated (see below).
+
 ### Migrating Patches
 
 When you want to upgrade the version of a package, you will need to migrate the
@@ -293,7 +314,7 @@ build. We automate the following steps:
   `<package name>-tests.zip`
 - Repack the wheel with `python -m wheel pack`
 
-Lastly, a `repodata.json` file is created containing the dependency tree of all
+Lastly, a `pyodide-lock.json` file is created containing the dependency tree of all
 packages, so {js:func}`pyodide.loadPackage` can load a package's dependencies
 automatically.
 

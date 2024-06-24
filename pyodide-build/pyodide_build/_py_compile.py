@@ -26,17 +26,18 @@ def _specialize_convert_tags(tags: set[Tag] | frozenset[Tag], wheel_name: str) -
     --------
     >>> from packaging.tags import parse_tag
     >>> tags = parse_tag("py2.py3-none-any")
-    >>> str(_specialize_convert_tags(set(tags), ""))
-    'cp311-none-any'
+    >>> import re
+    >>> re.sub("cp[0-9]*", "cpxxx", str(_specialize_convert_tags(set(tags), "")))
+    'cpxxx-none-any'
     >>> tags = parse_tag("cp311-cp311-emscripten_3_1_24_wasm32")
-    >>> str(_specialize_convert_tags(set(tags), ""))
-    'cp311-cp311-emscripten_3_1_24_wasm32'
+    >>> re.sub("cp[0-9]*", "cpxxx", str(_specialize_convert_tags(set(tags), "")))
+    'cpxxx-cpxxx-emscripten_3_1_24_wasm32'
     >>> tags = parse_tag("py310.py311-any-none")
-    >>> str(_specialize_convert_tags(set(tags), ""))
-    'cp311-any-none'
+    >>> re.sub("cp[0-9]*", "cpxxx", str(_specialize_convert_tags(set(tags), "")))
+    'cpxxx-any-none'
     >>> tags = parse_tag("py36-abi3-none")
-    >>> str(_specialize_convert_tags(set(tags), ""))
-    'cp311-abi3-none'
+    >>> re.sub("cp[0-9]*", "cpxxx", str(_specialize_convert_tags(set(tags), "")))
+    'cpxxx-abi3-none'
     """
     if len(tags) == 0:
         raise ValueError("Failed to parse tags from the wheel file name: {wheel_name}!")
@@ -65,16 +66,17 @@ def _py_compile_wheel_name(wheel_name: str) -> str:
 
     Examples
     --------
-    >>> _py_compile_wheel_name('micropip-0.1.0-py3-none-any.whl')
-    'micropip-0.1.0-cp311-none-any.whl'
-    >>> _py_compile_wheel_name("numpy-1.22.4-cp311-cp311-emscripten_3_1_24_wasm32.whl")
-    'numpy-1.22.4-cp311-cp311-emscripten_3_1_24_wasm32.whl'
+    >>> import re
+    >>> re.sub("cp[0-9]*", "cpxxx", _py_compile_wheel_name('micropip-0.1.0-py3-none-any.whl'))
+    'micropip-0.1.0-cpxxx-none-any.whl'
+    >>> re.sub("cp[0-9]*", "cpxxx", _py_compile_wheel_name("numpy-1.22.4-cp311-cp311-emscripten_3_1_24_wasm32.whl"))
+    'numpy-1.22.4-cpxxx-cpxxx-emscripten_3_1_24_wasm32.whl'
     >>> # names with '_' are preserved (instead of using '-')
-    >>> _py_compile_wheel_name("a_b-0.0.0-cp311-cp311-emscripten_3_1_24_wasm32.whl")
-    'a_b-0.0.0-cp311-cp311-emscripten_3_1_24_wasm32.whl'
+    >>> re.sub("cp[0-9]*", "cpxxx", _py_compile_wheel_name("a_b-0.0.0-cp311-cp311-emscripten_3_1_24_wasm32.whl"))
+    'a_b-0.0.0-cpxxx-cpxxx-emscripten_3_1_24_wasm32.whl'
     >>> # if there are multiple tags (e.g. py2 & py3), we only keep the relevant one
-    >>> _py_compile_wheel_name('attrs-21.4.0-py2.py3-none-any.whl')
-    'attrs-21.4.0-cp311-none-any.whl'
+    >>> re.sub("cp[0-9]*", "cpxxx", _py_compile_wheel_name('attrs-21.4.0-py2.py3-none-any.whl'))
+    'attrs-21.4.0-cpxxx-none-any.whl'
 
 
     # >>> msg = "Processing more than one tag is not implemented"
@@ -120,9 +122,10 @@ def _compile(
         else:
             compression = zipfile.ZIP_STORED
 
-        with zipfile.ZipFile(
-            input_path
-        ) as fh_zip_in, TemporaryDirectory() as temp_dir_str:
+        with (
+            zipfile.ZipFile(input_path) as fh_zip_in,
+            TemporaryDirectory() as temp_dir_str,
+        ):
             temp_dir = Path(temp_dir_str)
             output_path_tmp = temp_dir / output_name
             with zipfile.ZipFile(
@@ -230,8 +233,9 @@ def _get_py_compiled_archive_name(path: Path) -> str | None:
 
     Examples
     --------
-    >>> _get_py_compiled_archive_name(Path("snowballstemmer-2.2.0-py2.py3-none-any.whl"))
-    'snowballstemmer-2.2.0-cp311-none-any.whl'
+    >>> import re
+    >>> re.sub("cp[0-9]*", "cpxxx", _get_py_compiled_archive_name(Path("snowballstemmer-2.2.0-py2.py3-none-any.whl")))
+    'snowballstemmer-2.2.0-cpxxx-none-any.whl'
     >>> _get_py_compiled_archive_name(Path("test-1.0.0.zip"))
     """
     # TODO: fix py-compilation of the following packages
@@ -258,18 +262,18 @@ def _get_py_compiled_archive_name(path: Path) -> str | None:
         return None
 
 
-def _update_repodata(
-    input_dir: Path, repodata: dict[str, Any], name_mapping: dict[str, str]
+def _update_lockfile(
+    input_dir: Path, lockfile: dict[str, Any], name_mapping: dict[str, str]
 ) -> dict[str, Any]:
-    """Update repodata.json with the new names of the py-compiled wheels.
+    """Update pyodide-lock.json with the new names of the py-compiled wheels.
 
     Also update the checksums of the updated wheels
     """
-    for row in repodata["packages"].values():
+    for row in lockfile["packages"].values():
         if row.get("file_name") in name_mapping:
             row["file_name"] = name_mapping[row["file_name"]]
             row["sha256"] = _get_sha256_checksum(input_dir / row["file_name"])
-    return repodata
+    return lockfile
 
 
 def _py_compile_archive_dir(
@@ -321,13 +325,13 @@ def _py_compile_archive_dir(
             )
             name_mapping[file_path.name] = output_name
 
-    repodata_path = input_dir / "repodata.json"
-    if name_mapping and repodata_path.exists():
+    lockfile_path = input_dir / "pyodide-lock.json"
+    if name_mapping and lockfile_path.exists():
         if verbose:
-            print(f"Updating {repodata_path.name}")
-        with open(repodata_path) as fh:
-            repodata = json.load(fh)
-        repodata = _update_repodata(input_dir, repodata, name_mapping)
-        with open(repodata_path, "w") as fh:
-            json.dump(repodata, fh)
+            print(f"Updating {lockfile_path.name}")
+        with open(lockfile_path) as fh:
+            lockfile = json.load(fh)
+        lockfile = _update_lockfile(input_dir, lockfile, name_mapping)
+        with open(lockfile_path, "w") as fh:
+            json.dump(lockfile, fh)
     return name_mapping

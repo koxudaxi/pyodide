@@ -2,12 +2,12 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from .common import (
-    exit_with_stdio,
+from .build_env import (
     get_build_flag,
     get_pyodide_root,
     get_unisolated_packages,
 )
+from .common import exit_with_stdio
 from .logger import logger
 from .recipe import load_all_recipes
 
@@ -47,16 +47,18 @@ def _copy_wasm_libs(
         return Path(get_build_flag(flag)).relative_to(pyodide_root)
 
     pythoninclude = get_relative_path(pyodide_root, "PYTHONINCLUDE")
-    wasm_lib_dir = get_relative_path(pyodide_root, "WASM_LIBRARY_DIR")
     sysconfig_dir = get_relative_path(pyodide_root, "SYSCONFIGDATA_DIR")
+    # TODO: remove libs from the xbuildenv
+    wasm_lib_dir = Path("packages") / ".libs"
     to_copy: list[Path] = [
         pythoninclude,
         sysconfig_dir,
         Path("Makefile.envs"),
         wasm_lib_dir / "cmake",
-        Path("dist/repodata.json"),
+        Path("dist/pyodide-lock.json"),
         Path("dist/python"),
         Path("dist/python_stdlib.zip"),
+        Path("tools/constraints.txt"),
     ]
     to_copy.extend(
         x.relative_to(pyodide_root) for x in (pyodide_root / "dist").glob("pyodide.*")
@@ -112,16 +114,6 @@ def create(
     _copy_wasm_libs(pyodide_root, xbuildenv_root, skip_missing_files)
 
     (xbuildenv_root / "package.json").write_text("{}")
-    res = subprocess.run(
-        ["npm", "i", "node-fetch@2"],
-        cwd=xbuildenv_root,
-        capture_output=True,
-        encoding="utf8",
-    )
-    if res.returncode != 0:
-        logger.error("Failed to install node-fetch:")
-        exit_with_stdio(res)
-
     res = subprocess.run(
         ["pip", "freeze", "--path", get_build_flag("HOSTSITEPACKAGES")],
         capture_output=True,

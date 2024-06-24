@@ -1,11 +1,11 @@
 package:
   name: pluggy
-  version: 1.0.0
+  version: 1.5.0
   top-level:
     - pluggy
 source:
-  sha256: 74134bbf457f031a36d68416e1509f34bd5ccc019f0bcc952c7b909d06b37bd3
-  url: https://files.pythonhosted.org/packages/9e/01/f38e2ff29715251cf25532b9082a1589ab7e4f571ced434f98d0139336dc/pluggy-1.0.0-py2.py3-none-any.whl
+  sha256: 44e1ad92c8ca002de6377e165f3e0f1be63266ab4d554740532335b9d75ea669
+  url: https://files.pythonhosted.org/packages/88/5f/e351af9a41f866ac3f1fac4ca0613908d9a41741cfcf2228f4ad853b697d/pluggy-1.5.0-py3-none-any.whl
 about:
   home: https://github.com/pytest-dev/pluggy
   PyPI: https://pypi.org/project/pluggy

@@ -1,13 +1,16 @@
 package:
   name: fsspec
-  version: 2023.3.0
+  version: 2024.3.1
   top-level:
     - fsspec
 source:
-  url: https://files.pythonhosted.org/packages/4f/65/887925f1549fcb6ac3abb23a747c10f5ab083e8471fe568768b18bdb15b2/fsspec-2023.3.0-py3-none-any.whl
-  sha256: bf57215e19dbfa4fe7edae53040cc1deef825e3b1605cca9a8d2c2fadd2328a0
+  url: https://files.pythonhosted.org/packages/93/6d/66d48b03460768f523da62a57a7e14e5e95fdf339d79e996ce3cecda2cdb/fsspec-2024.3.1-py3-none-any.whl
+  sha256: 918d18d41bf73f0e2b261824baeb1b124bcf771767e3a26425cd7dec3332f512
 about:
   home: http://github.com/fsspec/filesystem_spec
   PyPI: https://pypi.org/project/fsspec
   summary: File-system specification
   license: BSD
+extra:
+  recipe-maintainers:
+    - joemarshall

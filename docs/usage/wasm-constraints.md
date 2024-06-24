@@ -18,7 +18,6 @@ However this has a significant impact on the download size.
 Instead, it is better to load individual modules as needed using
 {js:func}`pyodide.loadPackage` or {py:func}`micropip.install`.
 
-- distutils
 - ssl
 - lzma
 - sqlite3
@@ -47,6 +46,30 @@ Instead, it is better to load individual modules as needed using
   Pyodide includes some method stubs based on browser APIs:
   `webbrowser.open()`, `webbrowser.open_new()`, `webbrowser.open_new_tab()`.
 
+- zoneinfo: The zoneinfo package will only work if you install the timezone data using
+  the tzdata package (i.e. by calling `pyodide.loadPackage("tzdata")`)
+
+### Synchronous HTTP requests support
+
+Packages for `urllib3` and `requests` are included in pyodide. In browser, these
+function _roughly_ the same as on other operating systems with some
+limitations. In node.js, they are currently untested, they will require
+at least a polyfill for synchronous XMLHttpRequest, and WebWorker.
+
+The first limitation is that streaming download of files only works
+in very specific circumstances, which are that pyodide has to be running
+in a web-worker, and it has to be on a cross-origin isolated website.
+If either of these conditions are not met, it will do a non-streaming
+request, i.e. download the full request body before it returns from the
+initial request call.
+
+Secondly, all network calls are done via the browser. This means you are
+subject to the same limitations as any JavaScript network call. This means
+you have very little or no control over certificates, timeouts, proxies and
+other network related settings. You also are constrained by browser policies
+relating to cross-origin requests, sometimes things will be blocked by CORS
+policies if the server doesn't serve them with the correct headers.
+
 ### Removed modules
 
 The following modules are removed from the standard library to reduce download size and
@@ -55,13 +78,21 @@ since they currently wouldn't work in the WebAssembly VM,
 - curses
 - dbm
 - ensurepip
+- fcntl
+- grp
 - idlelib
 - lib2to3
+- msvcrt
+- pwd
+- resource
+- syslog
+- termios
 - tkinter
 - turtle.py
 - turtledemo
 - venv
-- pwd
+- winreg
+- winsound
 
 ### Included but not working modules
 
@@ -72,3 +103,8 @@ The following modules can be imported, but are not functional due to the limitat
 - sockets
 
 as well as any functionality that requires these.
+
+The following are present but cannot be imported due to a dependency on the termios package which has been removed:
+
+- pty
+- tty

@@ -1,4 +1,5 @@
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -41,6 +42,8 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
         pyparsing_wheel_name = get_pyparsing_wheel_name()
         selenium.load_package(f"http://{url}:{port}/{pyparsing_wheel_name}")
         assert "Skipping unknown package" not in selenium.logs
+        assert "Loading pyparsing" in selenium.logs
+        assert "Loaded pyparsing" in selenium.logs
 
         # check that all resources were loaded from the active server
         txt = fh_main.read()
@@ -72,15 +75,19 @@ def test_load_relative_url(
     pytz1_wheel = pytz_wheel.replace("pytz", "pytz1")
     shutil.copy(DIST_PATH / pytz_wheel, tmp_path / pytz1_wheel)
 
-    with spawn_web_server(tmp_path) as web_server, selenium_common(
-        request,
-        runtime,
-        web_server,
-        load_pyodide=False,
-        browsers=playwright_browsers,
-        script_type="classic",
-    ) as selenium, set_webdriver_script_timeout(
-        selenium, script_timeout=parse_driver_timeout(request.node)
+    with (
+        spawn_web_server(tmp_path) as web_server,
+        selenium_common(
+            request,
+            runtime,
+            web_server,
+            load_pyodide=False,
+            browsers=playwright_browsers,
+            script_type="classic",
+        ) as selenium,
+        set_webdriver_script_timeout(
+            selenium, script_timeout=parse_driver_timeout(request.node)
+        ),
     ):
         if selenium.browser != "node":
             selenium.goto(f"http://{url}:{web_server[1]}/test_temp.html")
@@ -130,6 +137,38 @@ def test_invalid_package_name(selenium):
         selenium.load_package("tcp://some_url")
 
 
+def test_load_package_return(selenium_standalone):
+    selenium = selenium_standalone
+    package = selenium.run_js("return await pyodide.loadPackage('pyparsing')")
+
+    assert package[0]["name"] == "pyparsing"
+    assert package[0]["packageType"] == "package"
+
+
+@pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
+@pytest.mark.parametrize("active_server", ["main", "secondary"])
+def test_load_package_return_from_url(
+    selenium_standalone, web_server_secondary, active_server
+):
+    selenium = selenium_standalone
+    if active_server == "secondary":
+        url, port, _ = web_server_secondary
+    elif active_server == "main":
+        url = selenium.server_hostname
+        port = selenium.server_port
+    else:
+        raise AssertionError()
+
+    pyparsing_wheel_name = get_pyparsing_wheel_name()
+    package = selenium.run_js(
+        f"return await pyodide.loadPackage('http://{url}:{port}/{pyparsing_wheel_name}')"
+    )
+
+    assert package[0]["name"] == "pyparsing"
+    assert package[0]["packageType"] == "package"
+    assert package[0]["fileName"] == pyparsing_wheel_name
+
+
 @pytest.mark.parametrize(
     "packages", [["pyparsing", "pytz"], ["pyparsing", "packaging"]], ids="-".join
 )
@@ -153,7 +192,9 @@ def test_load_packages_multiple(selenium_standalone, packages):
 def test_load_packages_sequential(selenium_standalone, packages):
     selenium = selenium_standalone
     promises = ",".join(f'pyodide.loadPackage("{x}")' for x in packages)
-    selenium.run_js(f"return Promise.all([{promises}])")
+    loaded_packages = [
+        x[0]["name"] for x in selenium.run_js(f"return await Promise.all([{promises}])")
+    ]
     selenium.run(f"import {packages[0]}")
     selenium.run(f"import {packages[1]}")
     # The log must show that each package is loaded exactly once,
@@ -161,6 +202,11 @@ def test_load_packages_sequential(selenium_standalone, packages):
     # ('pyparsing' and 'matplotlib')
     assert selenium.logs.count(f"Loaded {packages[0]}") == 1
     assert selenium.logs.count(f"Loaded {packages[1]}") == 1
+
+    assert loaded_packages == [packages[0], packages[1]] or loaded_packages == [
+        packages[1],
+        packages[0],
+    ]
 
 
 def test_load_handle_failure(selenium_standalone):
@@ -187,23 +233,6 @@ def test_load_failure_retry(selenium_standalone):
     selenium.load_package("pytz")
     selenium.run("import pytz")
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == ["pytz"]
-
-
-def test_load_package_unknown(selenium_standalone):
-    pyparsing_wheel_name = get_pyparsing_wheel_name()
-    shutil.copyfile(
-        DIST_PATH / pyparsing_wheel_name,
-        DIST_PATH / "pyparsing-custom-3.0.6-py3-none-any.whl",
-    )
-
-    try:
-        selenium_standalone.load_package("./pyparsing-custom-3.0.6-py3-none-any.whl")
-    finally:
-        (DIST_PATH / "pyparsing-custom-3.0.6-py3-none-any.whl").unlink()
-
-    assert selenium_standalone.run_js(
-        "return pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
-    )
 
 
 def test_load_twice(selenium_standalone):
@@ -264,6 +293,7 @@ def test_load_package_mixed_case(selenium_standalone, jinja2):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_test_unvendoring(selenium_standalone):
     selenium = selenium_standalone
     selenium.run_js(
@@ -289,7 +319,7 @@ def test_test_unvendoring(selenium_standalone):
 
     assert selenium.run_js(
         """
-        return pyodide._api.repodata_packages['regex'].unvendored_tests;
+        return pyodide._api.lockfile_packages['regex'].unvendored_tests;
         """
     )
 
@@ -336,6 +366,7 @@ def test_install_archive(selenium):
         (test_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
 
 
+@pytest.mark.requires_dynamic_linking
 def test_load_bad_so_file(selenium):
     # If we load a bad so file, we should catch the error, ignore it (and log a
     # warning)
@@ -432,8 +463,10 @@ class DummyDistribution:
         source: str | None = None,
         direct_url: dict[str, str] | None = None,
         installer: str | None = None,
+        version: str = "0.0.1",
     ):
         self.name = name
+        self.version = version
         direct_url_json = json.dumps(direct_url) if direct_url else None
         self._files: dict[str, str | None] = {
             "PYODIDE_SOURCE": source,
@@ -441,8 +474,23 @@ class DummyDistribution:
             "INSTALLER": installer,
         }
 
-    def read_text(self, key: str) -> str | None:
-        return self._files.get(key)
+    @property
+    def dist_info_name(self):
+        # https://packaging.python.org/en/latest/specifications/name-normalization/#normalization
+        normalized_name = re.sub(r"[-_.]+", "-", self.name).lower()
+        return f"{normalized_name}-{self.version}.dist-info"
+
+    def write(self, base_dir: Path) -> None:
+        dist_info_dir = base_dir / self.dist_info_name
+        dist_info_dir.mkdir(exist_ok=True)
+        for key, value in self._files.items():
+            if value is not None:
+                (dist_info_dir / key).write_text(value)
+        with (dist_info_dir / "METADATA").open("w") as f:
+            f.write(
+                f"Metadata-Version: 2.1\nName: {self.name}\n"
+                f"Version: {self.version}\n"
+            )
 
     def __repr__(self):
         return self.name
@@ -480,27 +528,31 @@ result_dist_pairs = [
     ),
     ("pip (index unknown)", DummyDistribution("F", installer="pip")),
     ("other (index unknown)", DummyDistribution("G", installer="other")),
-    ("Unknown", DummyDistribution("H")),
+    ("Unknown", DummyDistribution("H-H")),
 ]
 
 
 @pytest.mark.parametrize("result,dist", result_dist_pairs)
-def test_get_dist_source(result, dist):
+def test_get_dist_source(result, dist, tmp_path):
     from pyodide._package_loader import get_dist_source
 
-    assert result == get_dist_source(dist)
+    dist.write(tmp_path)
+
+    assert (dist.name, result) == get_dist_source(tmp_path / dist.dist_info_name)
 
 
-def test_init_loaded_packages(monkeypatch):
+def test_init_loaded_packages(monkeypatch, tmp_path):
     from pyodide import _package_loader
 
     class loadedPackagesCls:
         pass
 
     loadedPackages = loadedPackagesCls()
+    monkeypatch.setattr(_package_loader, "SITE_PACKAGES", tmp_path)
     monkeypatch.setattr(_package_loader, "loadedPackages", loadedPackages)
     dists = [dist for [_, dist] in result_dist_pairs]
-    monkeypatch.setattr(_package_loader, "importlib_distributions", lambda: dists)
+    for dist in dists:
+        dist.write(tmp_path)
     _package_loader.init_loaded_packages()
 
     for [result, dist] in result_dist_pairs:
@@ -511,11 +563,12 @@ def test_init_loaded_packages(monkeypatch):
 @pytest.mark.xfail_browsers(node="Some fetch trouble")
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
+@pytest.mark.requires_dynamic_linking
 def test_custom_lockfile(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     lock = selenium.run_js(
         """
-        let pyodide = await loadPyodide({fullStdLib: false});
+        let pyodide = await loadPyodide({fullStdLib: false, packages: ["micropip"]});
         await pyodide.loadPackage("micropip")
         return pyodide.runPythonAsync(`
             import micropip
@@ -531,8 +584,7 @@ def test_custom_lockfile(selenium_standalone_noload):
         assert (
             selenium.run_js(
                 """
-                let pyodide = await loadPyodide({fullStdLib: false, lockFileURL: "custom_lockfile.json" });
-                await pyodide.loadPackage("hypothesis");
+                let pyodide = await loadPyodide({fullStdLib: false, lockFileURL: "custom_lockfile.json", packages: ["hypothesis"] });
                 return pyodide.runPython("import hypothesis; hypothesis.__version__")
                 """
             )
@@ -540,3 +592,41 @@ def test_custom_lockfile(selenium_standalone_noload):
         )
     finally:
         custom_lockfile.unlink()
+
+
+@pytest.mark.parametrize(
+    "load_name, normalized_name, real_name",
+    [
+        # TODO: find a better way to test this without relying on the core packages set
+        ("fpcast-test", "fpcast-test", "fpcast-test"),
+        ("fpcast_test", "fpcast-test", "fpcast-test"),
+        ("Jinja2", "jinja2", "Jinja2"),
+        ("jinja2", "jinja2", "Jinja2"),
+        ("pydoc_data", "pydoc-data", "pydoc_data"),
+        ("pydoc-data", "pydoc-data", "pydoc_data"),
+    ],
+)
+@pytest.mark.requires_dynamic_linking  # only required for fpcast-test
+def test_normalized_name(selenium_standalone, load_name, normalized_name, real_name):
+    selenium = selenium_standalone
+
+    selenium.run_js(
+        f"""
+        const msgs = [];
+        await pyodide.loadPackage(
+            "{load_name}",
+            {{
+                messageCallback: (msg) => msgs.push(msg),
+            }}
+        )
+
+        const loaded = Object.keys(pyodide.loadedPackages);
+        assert(() => loaded.includes("{real_name}"));
+
+        const loadStartMsgs = msgs.filter((msg) => msg.startsWith("Loading"));
+        const loadEndMsgs = msgs.filter((msg) => msg.startsWith("Loaded"));
+
+        assert(() => loadStartMsgs.some((msg) => msg.includes("{real_name}")));
+        assert(() => loadEndMsgs.some((msg) => msg.includes("{real_name}")));
+        """
+    )

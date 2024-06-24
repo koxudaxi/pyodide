@@ -1,11 +1,11 @@
 package:
   name: packaging
-  version: "23.0"
+  version: "23.2"
   top-level:
     - packaging
 source:
-  sha256: b6ad297f8907de0fa2fe1ccbd26fdaf387f5f47c7275fedf8cce89f99446cf97
-  url: https://files.pythonhosted.org/packages/47/d5/aca8ff6f49aa5565df1c826e7bf5e85a6df852ee063600c1efa5b932968c/packaging-23.0.tar.gz
+  sha256: 048fb0e9405036518eaaf48a55953c750c11e1a1b68e0dd1a9d62ed0c092cfc5
+  url: https://files.pythonhosted.org/packages/fb/2b/9b9c33ffed44ee921d0967086d653047286054117d584f1b1a7c22ceaf7b/packaging-23.2.tar.gz
 
 about:
   home: https://github.com/pypa/packaging

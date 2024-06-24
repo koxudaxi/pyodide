@@ -1,12 +1,12 @@
 package:
   name: mypy
-  version: 1.1.1
+  version: 1.9.0
   top-level:
     - mypyc
     - mypy
 source:
-  url: https://files.pythonhosted.org/packages/62/54/be80f8d01f5cf72f774a77f9f750527a6fa733f09f78b1da30e8fa3914e6/mypy-1.1.1.tar.gz
-  sha256: ae9ceae0f5b9059f33dbc62dea087e942c0ccab4b7a003719cb70f9b8abfa32f
+  url: https://files.pythonhosted.org/packages/72/1e/a587a862c766a755a58b62d8c00aed11b74a15dc415c1bf5da7b607b0efd/mypy-1.9.0.tar.gz
+  sha256: 3cc5da0127e6a478cddd906068496a97a7618a21ce9b54bde5bf7e539c7af974
 build:
   script: |
     export MYPY_USE_MYPYC=1

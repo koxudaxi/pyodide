@@ -67,9 +67,8 @@ def test_jsproxy_dir(selenium):
 
 
 def test_jsproxy_getattr(selenium):
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             self.a = { x : 2, y : "9", typeof : 7 };
             let pyresult = pyodide.runPython(`
                 from js import a
@@ -79,9 +78,21 @@ def test_jsproxy_getattr(selenium):
             pyresult.destroy();
             return result;
             """
-        )
-        == [2, "9", "object"]
-    )
+    ) == [2, "9", "object"]
+
+
+@run_in_pyodide
+def test_jsproxy_getattr_errors(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    o = run_js("({get a() { throw new Error('oops'); } })")
+    with pytest.raises(AttributeError):
+        o.x  # noqa: B018
+    with pytest.raises(JsException):
+        o.a  # noqa: B018
 
 
 @pytest.mark.xfail_browsers(node="No document in node")
@@ -105,7 +116,7 @@ def test_jsproxy_document(selenium):
 @pytest.mark.parametrize(
     "js,result",
     [
-        ("{}", False),
+        ("{}", True),
         ("{a:1}", True),
         ("[]", False),
         ("[1]", True),
@@ -113,8 +124,8 @@ def test_jsproxy_document(selenium):
         ("new Map([[0, 0]])", True),
         ("new Set()", False),
         ("new Set([0])", True),
-        ("class T {}; T", True),
-        ("class T {}; new T()", True),
+        ("class T {}", True),
+        ("new (class T {})", True),
         ("new Uint8Array(0)", False),
         ("new Uint8Array(1)", True),
         ("new ArrayBuffer(0)", False),
@@ -125,7 +136,7 @@ def test_jsproxy_document(selenium):
 def test_jsproxy_bool(selenium, js, result):
     from pyodide.code import run_js
 
-    assert bool(run_js(js)) == result
+    assert bool(run_js(f"({js})")) == result
 
 
 @pytest.mark.xfail_browsers(node="No document in node")
@@ -252,10 +263,9 @@ def test_jsproxy_implicit_iter(selenium):
     ) == [1, 2, 3]
 
 
-def test_jsproxy_call(selenium):
-    assert (
-        selenium.run_js(
-            """
+def test_jsproxy_call1(selenium):
+    assert selenium.run_js(
+        """
             self.f = function(){ return arguments.length; };
             let pyresult = pyodide.runPython(
                 `
@@ -267,15 +277,20 @@ def test_jsproxy_call(selenium):
             pyresult.destroy();
             return result;
             """
-        )
-        == list(range(10))
-    )
+    ) == list(range(10))
+
+
+@run_in_pyodide
+def test_jsproxy_call2(selenium):
+    from pyodide.code import run_js
+
+    f = run_js("(function(){ return arguments.length; })")
+    assert [f(*range(n)) for n in range(10)] == list(range(10))
 
 
 def test_jsproxy_call_kwargs(selenium):
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             self.kwarg_function = ({ a = 1, b = 1 }) => {
                 return [a, b];
             };
@@ -286,9 +301,7 @@ def test_jsproxy_call_kwargs(selenium):
                 `
             );
             """
-        )
-        == [10, 2]
-    )
+    ) == [10, 2]
 
 
 @pytest.mark.xfail
@@ -348,6 +361,7 @@ def test_call_pyproxy_destroy_args(selenium):
     selenium.run_js(
         r"""
         let y;
+        pyodide.setDebug(true);
         self.f = function(x){ y = x; }
         pyodide.runPython(`
             from js import f
@@ -357,6 +371,23 @@ def test_call_pyproxy_destroy_args(selenium):
         assertThrows(() => y.length, "Error",
             "This borrowed proxy was automatically destroyed at the end of a function call.*\n" +
             'The object was of type "list" and had repr "\\[\\]"'
+        );
+        """
+    )
+
+    selenium.run_js(
+        r"""
+        let y;
+        pyodide.setDebug(false);
+        self.f = function(x){ y = x; }
+        pyodide.runPython(`
+            from js import f
+            f({})
+            f([])
+        `);
+        assertThrows(() => y.length, "Error",
+            "This borrowed proxy was automatically destroyed at the end of a function call.*\n" +
+            'For more information about the cause of this error, use `pyodide.setDebug.true.`'
         );
         """
     )
@@ -509,14 +540,14 @@ def test_import_invocation(selenium):
     from pyodide.ffi import create_once_callable
 
     js.setTimeout(create_once_callable(temp), 100)
-    js.fetch("repodata.json")
+    js.fetch("pyodide-lock.json")
 
 
 @run_in_pyodide
 def test_import_bind(selenium):
     from js import fetch
 
-    fetch("repodata.json")
+    fetch("pyodide-lock.json")
 
 
 @run_in_pyodide
@@ -661,6 +692,56 @@ def test_unregister_jsmodule_error(selenium):
         }
         """
     )
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+@run_in_pyodide
+def test_jsmod_import_star1(selenium):
+    import sys
+    from typing import Any
+
+    from pyodide.code import run_js
+
+    run_js("pyodide.registerJsModule('xx', {a: 2, b: 7, f(x){ return x + 1; }});")
+    g: dict[str, Any] = {}
+    exec("from xx import *", g)
+    try:
+        assert "a" in g
+        assert "b" in g
+        assert "f" in g
+        assert "__all__" not in g
+        assert g["a"] == 2
+        assert g["b"] == 7
+        assert g["f"](9) == 10
+    finally:
+        sys.modules.pop("xx", None)
+        run_js("pyodide.unregisterJsModule('xx');")
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+@run_in_pyodide
+def test_jsmod_import_star2(selenium):
+    import sys
+    from typing import Any
+
+    from pyodide.code import run_js
+
+    run_js(
+        "pyodide.registerJsModule('xx', {a: 2, b: 7, f(x){ return x + 1; }, __all__ : pyodide.toPy(['a'])});"
+    )
+    g: dict[str, Any] = {}
+    exec("from xx import *", g)
+    try:
+        assert "a" in g
+        assert "b" not in g
+        assert "f" not in g
+        assert "__all__" not in g
+        assert g["a"] == 2
+    finally:
+        sys.modules.pop("xx", None)
+        run_js("pyodide.unregisterJsModule('xx');")
 
 
 @pytest.mark.skip_refcount_check
@@ -840,7 +921,7 @@ def test_mixins_errors_1(selenium):
             set(){ return false; },
             delete(){ return false; },
         };
-        await pyodide.runPythonAsync(`
+        pyodide.runPython(`
             from unittest import TestCase
             raises = TestCase().assertRaises
             from js import a, b
@@ -1205,13 +1286,10 @@ def test_js_id(selenium):
 
 @run_in_pyodide
 def test_object_with_null_constructor(selenium):
-    from unittest import TestCase
-
     from pyodide.code import run_js
 
     o = run_js("Object.create(null)")
-    with TestCase().assertRaises(TypeError):
-        repr(o)
+    assert repr(o) == "[object Object]"
 
 
 @pytest.mark.parametrize("n", [1 << 31, 1 << 32, 1 << 33, 1 << 63, 1 << 64, 1 << 65])
@@ -1262,6 +1340,72 @@ def test_negative_length(selenium, n):
     a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
     with raises:
         a[-1]
+
+
+@run_in_pyodide
+def test_jsarray_reversed(selenium):
+    from pyodide.code import run_js
+
+    l = [5, 7, 9, -1, 3, 5]
+    a = run_js(repr(l))
+    b = run_js(f"new Int8Array({repr(l)})")
+    it1 = reversed(l)
+    it2 = reversed(a)
+    it3 = reversed(b)
+
+    for _ in range(len(l)):
+        v = next(it1)
+        assert next(it2) == v
+        assert next(it3) == v
+
+    import pytest
+
+    with pytest.raises(StopIteration):
+        next(it1)
+    with pytest.raises(StopIteration):
+        next(it2)
+    with pytest.raises(StopIteration):
+        next(it3)
+
+
+@run_in_pyodide
+def test_jsarray_reverse(selenium):
+    from pyodide.code import run_js
+
+    l = [5, 7, 9, 0, 3, 1]
+    a = run_js(repr(l))
+    b = run_js(f"new Int8Array({repr(l)})")
+
+    l.reverse()
+    a.reverse()
+    b.reverse()
+
+    assert a.to_py() == l
+    assert b.to_bytes() == bytes(l)
+
+
+@run_in_pyodide
+def test_array_empty_slot(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    a = run_js("[1,,2]")
+    with pytest.raises(IndexError):
+        a[1]
+
+    assert a.to_py() == [1, None, 2]
+    del a[1]
+    assert a.to_py() == [1, 2]
+
+
+@run_in_pyodide
+def test_array_pop(selenium):
+    from pyodide.code import run_js
+
+    a = run_js("[1, 2, 3]")
+    assert a.pop() == 3
+    assert a.pop(0) == 1
 
 
 @std_hypothesis_settings
@@ -1369,7 +1513,7 @@ def test_array_slice_assign_2(selenium):
         l[:] = 1  # type: ignore[call-overload]
 
     with pytest.raises(TypeError) as exc_info_3b:
-        jsl[:] = 1
+        jsl[:] = 1  # type: ignore[call-overload]
 
     assert exc_info_1a.value.args == exc_info_1b.value.args
     assert exc_info_2a.value.args == exc_info_2b.value.args
@@ -1450,6 +1594,7 @@ def test_html_array(selenium):
         "(x) => Object.create({[Symbol.toStringTag] : 'NodeList'}, Object.getOwnPropertyDescriptors(x))",
     ],
 )
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 def test_array_sequence_methods(selenium, sequence_converter):
     from pytest import raises
@@ -1618,45 +1763,44 @@ def test_jsarray_count(selenium):
 
 
 @run_in_pyodide
-def test_jsarray_reversed(selenium):
+def test_jsarray_remove(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import create_proxy
+
+    l = [5, 7, 9, -1, 3, 5]
+    a = run_js(repr(l))
+    l.remove(5)
+    a.remove(5)
+    with pytest.raises(ValueError, match="is not in list"):
+        a.remove(78)
+    assert a.to_py() == l
+    l.append([])  # type:ignore[arg-type]
+    p = create_proxy([], roundtrip=False)
+    a.append(p)
+    assert a.to_py() == l
+    l.remove([])  # type:ignore[arg-type]
+    a.remove([])
+    p.destroy()
+    assert a.to_py() == l
+    a.push([])
+    with pytest.raises(ValueError, match="is not in list"):
+        a.remove([])
+
+
+@run_in_pyodide
+def test_jsarray_insert(selenium):
     from pyodide.code import run_js
 
     l = [5, 7, 9, -1, 3, 5]
     a = run_js(repr(l))
-    b = run_js(f"new Int8Array({repr(l)})")
-    it1 = reversed(l)
-    it2 = reversed(a)
-    it3 = reversed(b)
-
-    for _ in range(len(l)):
-        v = next(it1)
-        assert next(it2) == v
-        assert next(it3) == v
-
-    import pytest
-
-    with pytest.raises(StopIteration):
-        next(it1)
-    with pytest.raises(StopIteration):
-        next(it2)
-    with pytest.raises(StopIteration):
-        next(it3)
-
-
-@run_in_pyodide
-def test_jsarray_reverse(selenium):
-    from pyodide.code import run_js
-
-    l = [5, 7, 9, 0, 3, 1]
-    a = run_js(repr(l))
-    b = run_js(f"new Int8Array({repr(l)})")
-
-    l.reverse()
-    a.reverse()
-    b.reverse()
-
+    l.insert(3, 66)
+    a.insert(3, 66)
     assert a.to_py() == l
-    assert b.to_bytes() == bytes(l)
+    l.insert(-1, 97)
+    a.insert(-1, 97)
+    assert a.to_py() == l
 
 
 @run_in_pyodide
@@ -2327,7 +2471,7 @@ def test_python_reserved_keywords(selenium):
     )
     assert o.match == 222
     with pytest.raises(AttributeError):
-        o.match_
+        o.match_  # noqa: B018
     assert eval("o.match") == 222
     keys = ["async", "await", "False", "nonlocal", "yield", "try", "assert"]
     for k in keys:
@@ -2359,12 +2503,15 @@ def test_python_reserved_keywords(selenium):
     assert o.async___ == 3
     assert getattr(o, "async_") == 1  # noqa: B009
     assert getattr(o, "async__") == 2  # noqa: B009
-    with pytest.raises(AttributeError, match="async"):
-        getattr(o, "async")
-    with pytest.raises(AttributeError, match="reserved.*set.*'async_'"):
-        setattr(o, "async", 2)
-    with pytest.raises(AttributeError, match="reserved.*delete.*'async_'"):
-        delattr(o, "async")
+    assert getattr(o, "async") == 1
+
+    assert hasattr(o, "async_")
+    assert hasattr(o, "async")
+    setattr(o, "async", 2)
+    assert o.async_ == 2
+    delattr(o, "async")
+    assert not hasattr(o, "async_")
+    assert not hasattr(o, "async")
 
 
 @run_in_pyodide
@@ -2378,3 +2525,99 @@ def test_revoked_proxy(selenium):
 
     x = run_js("(p = Proxy.revocable({}, {})); p.revoke(); p.proxy")
     run_js("((x) => x)")(x)
+
+
+@run_in_pyodide
+def test_js_proxy_attribute(selenium):
+    # Check that `in` is only consulted as a fallback if indexing returns None
+    import pytest
+
+    from pyodide.code import run_js
+
+    x = run_js(
+        """
+        new Proxy(
+            {},
+            {
+                get(target, val) {
+                    return { a: 3, b: 7, c: undefined, d: undefined }[val];
+                },
+                has(target, val) {
+                    return { a: true, b: false, c: true, d: false }[val];
+                },
+            }
+        );
+        """
+    )
+    assert x.a == 3
+    assert x.b == 7  # Previously this raised AttributeError
+    assert x.c is None
+    with pytest.raises(AttributeError):
+        x.d  # noqa: B018
+
+
+@run_in_pyodide
+async def test_js_proxy_str(selenium):
+    import re
+
+    import pytest
+
+    from js import Array
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    assert (
+        re.sub(r"\s+", " ", str(Array).replace("\n", " "))
+        == "function Array() { [native code] }"
+    )
+    assert str(run_js("[1,2,3]")) == "1,2,3"
+    assert str(run_js("Object.create(null)")) == "[object Object]"
+    mod = await run_js("import('data:text/javascript,')")
+    assert str(mod) == "[object Module]"
+    # accessing toString fails, should fall back to Object.prototype.toString.call
+    x = run_js(
+        """
+        ({
+          get toString() {
+            throw new Error();
+          },
+          [Symbol.toStringTag] : "SomeTag"
+        })
+        """
+    )
+    assert str(x) == "[object SomeTag]"
+    # accessing toString succeeds but toString call throws, let exception propagate
+    x = run_js(
+        """
+        ({
+          toString() {
+            throw new Error("hi!");
+          },
+        })
+        """
+    )
+    with pytest.raises(JsException, match="hi!"):
+        str(x)
+
+    # No toString method, so we fall back to Object.prototype.toString.call
+    # which throws, let error propagate
+    x = run_js(
+        """
+        ({
+          get [Symbol.toStringTag]() {
+            throw new Error("hi!");
+          },
+        });
+        """
+    )
+    with pytest.raises(JsException, match="hi!"):
+        str(x)
+
+    # accessing toString fails, so fall back to Object.prototype.toString.call
+    # which also throws, let error propagate
+    px = run_js("(p = Proxy.revocable({}, {})); p.revoke(); p.proxy")
+    with pytest.raises(
+        JsException,
+        match="revoked",
+    ):
+        str(px)

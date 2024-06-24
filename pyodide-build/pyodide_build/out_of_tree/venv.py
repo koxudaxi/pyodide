@@ -5,7 +5,8 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
-from ..common import exit_with_stdio, get_build_flag, get_pyodide_root, in_xbuildenv
+from ..build_env import get_build_flag, get_pyodide_root, in_xbuildenv
+from ..common import exit_with_stdio
 from ..logger import logger
 
 
@@ -50,7 +51,7 @@ def create_pip_conf(venv_root: Path) -> None:
         # In the xbuildenv, we don't have the packages locally. We will include
         # in the xbuildenv a PEP 503 index for the vendored Pyodide packages
         # https://peps.python.org/pep-0503/
-        repo = f'extra-index-url=file:{get_pyodide_root()/"pypa_index"}'
+        repo = f'extra-index-url=file:{get_pyodide_root()/"package_index"}'
     else:
         # In the Pyodide development environment, the Pyodide dist directory
         # should contain the needed wheels. find-links
@@ -100,6 +101,7 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
     return dedent(
         """\
         import os
+        import platform
         import sys
         """
         # when pip installs an executable it uses sys.executable to create the
@@ -120,6 +122,8 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
         orig_platform = sys.platform
         sys.platform = sys_platform
         sys.implementation._multiarch = multiarch
+        platform.system = lambda: sys_platform
+        platform.machine = lambda: "wasm32"
         os.environ["_PYTHON_HOST_PLATFORM"] = host_platform
         os.environ["_PYTHON_SYSCONFIGDATA_NAME"] = f'_sysconfigdata_{{sys.abiflags}}_{{sys.platform}}_{{sys.implementation._multiarch}}'
         sys.path.append("{sysconfigdata_dir}")
@@ -188,7 +192,7 @@ def create_pyodide_script(venv_bin: Path) -> None:
     pyodide_path.write_text(
         dedent(
             f"""
-            #!/bin/sh
+            #!/usr/bin/env bash
             PATH="{PATH}:$PATH" PYODIDE_ROOT='{PYODIDE_ROOT}' exec {original_pyodide_cli} "$@"
             """
         )
@@ -211,11 +215,11 @@ def install_stdlib(venv_bin: Path) -> None:
             dedent(
                 f"""
                 from pyodide_js import loadPackage
-                from pyodide_js._api import repodata_packages
-                from pyodide_js._api import repodata_unvendored_stdlibs_and_test
-                shared_libs = [pkgname for (pkgname,pkg) in repodata_packages.object_entries() if getattr(pkg, "shared_library", False)]
+                from pyodide_js._api import lockfile_packages
+                from pyodide_js._api import lockfile_unvendored_stdlibs_and_test
+                shared_libs = [pkgname for (pkgname,pkg) in lockfile_packages.object_entries() if getattr(pkg, "shared_library", False)]
 
-                to_load = [*repodata_unvendored_stdlibs_and_test, *shared_libs, *{to_load!r}]
+                to_load = [*lockfile_unvendored_stdlibs_and_test, *shared_libs, *{to_load!r}]
                 loadPackage(to_load);
                 """
             ),

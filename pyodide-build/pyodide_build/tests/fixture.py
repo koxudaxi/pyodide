@@ -1,11 +1,11 @@
-import json
-import shutil
+import os
 from pathlib import Path
-from typing import Any
 
 import pytest
 
-from ..common import chdir
+from conftest import ROOT_PATH
+from pyodide_build import build_env
+from pyodide_build.common import xbuildenv_dirname
 
 
 @pytest.fixture(scope="module")
@@ -16,7 +16,6 @@ def temp_python_lib(tmp_path_factory):
 
     (path / "test").mkdir()
     (path / "test" / "test_blah.py").touch()
-    (path / "distutils").mkdir()
     (path / "turtle.py").touch()
 
     (path / "module1.py").touch()
@@ -41,51 +40,77 @@ def temp_python_lib2(tmp_path_factory):
     yield libdir
 
 
-def mock_repodata_json() -> dict[str, Any]:
-    # TODO: use pydantic
+@pytest.fixture(scope="function")
+def reset_env_vars():
+    # Will reset the environment variables to their original values after each test.
 
-    return {
-        "info": {
-            "version": "0.22.1",
-        },
-        "packages": {},
-    }
+    os.environ.pop("PYODIDE_ROOT", None)
+    old_environ = dict(os.environ)
+
+    try:
+        yield
+    finally:
+        os.environ.clear()
+        os.environ.update(old_environ)
 
 
-@pytest.fixture(scope="module")
-def temp_xbuildenv(tmp_path_factory):
-    """
-    Create a temporary xbuildenv archive
-    """
-    base = tmp_path_factory.mktemp("base")
+@pytest.fixture(scope="function")
+def reset_cache():
+    # Will remove all caches before each test.
 
-    path = Path(base)
+    build_env.get_pyodide_root.cache_clear()
+    build_env.get_build_environment_vars.cache_clear()
+    build_env.get_unisolated_packages.cache_clear()
 
-    xbuildenv = path / "xbuildenv"
-    xbuildenv.mkdir()
+    yield
 
-    pyodide_root = xbuildenv / "pyodide-root"
-    site_packages_extra = xbuildenv / "site-packages-extras"
-    requirements_txt = xbuildenv / "requirements.txt"
 
-    pyodide_root.mkdir()
-    site_packages_extra.mkdir()
-    requirements_txt.touch()
+@pytest.fixture(scope="function")
+def xbuildenv(selenium, tmp_path, reset_env_vars, reset_cache):
+    import subprocess as sp
 
-    (pyodide_root / "Makefile.envs").write_text(
-        """
-export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages
+    assert "PYODIDE_ROOT" not in os.environ
 
-.output_vars:
-	set
-"""  # noqa: W191
+    envpath = Path(tmp_path) / xbuildenv_dirname()
+    result = sp.run(
+        [
+            "pyodide",
+            "xbuildenv",
+            "create",
+            str(envpath),
+            "--root",
+            ROOT_PATH,
+            "--skip-missing-files",
+        ]
     )
-    (pyodide_root / "dist").mkdir()
-    (pyodide_root / "dist" / "repodata.json").write_text(
-        json.dumps(mock_repodata_json())
+
+    assert result.returncode == 0
+
+    version_dir = envpath / "temp_version"
+    version_dir.mkdir()
+
+    sp.run(
+        [
+            "mv",
+            str(envpath / "xbuildenv"),
+            str(version_dir),
+        ]
     )
 
-    with chdir(base):
-        archive_name = shutil.make_archive("xbuildenv", "tar")
+    sp.run(
+        [
+            "ln",
+            "-s",
+            str(version_dir),
+            str(envpath / "xbuildenv"),
+        ]
+    )
 
-    yield base, archive_name
+    cur_dir = os.getcwd()
+
+    os.chdir(tmp_path)
+
+    try:
+        yield tmp_path
+    finally:
+        os.chdir(cur_dir)

@@ -1,11 +1,11 @@
 package:
   name: threadpoolctl
-  version: 3.1.0
+  version: 3.4.0
   top-level:
     - threadpoolctl
 source:
-  url: https://files.pythonhosted.org/packages/61/cf/6e354304bcb9c6413c4e02a747b600061c21d38ba51e7e544ac7bc66aecc/threadpoolctl-3.1.0-py3-none-any.whl
-  sha256: 8b99adda265feb6773280df41eece7b2e6561b772d21ffd52e372f999024907b
+  url: https://files.pythonhosted.org/packages/1e/84/ccd9b08653022b7785b6e3ee070ffb2825841e0dc119be22f0840b2b35cb/threadpoolctl-3.4.0-py3-none-any.whl
+  sha256: 8f4c689a65b23e5ed825c8436a92b818aac005e0f3715f6a1664d7c7ee29d262
 about:
   home: https://github.com/joblib/threadpoolctl
   PyPI: https://pypi.org/project/threadpoolctl

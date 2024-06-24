@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 from zipfile import ZipFile
 
 import requests
+from build import ConfigSettingsType
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 from packaging.version import Version
@@ -26,8 +27,9 @@ from resolvelib.providers import AbstractProvider
 from unearth.evaluator import TargetPython
 from unearth.finder import PackageFinder
 
-from .. import common
+from .. import build_env
 from ..common import repack_zip_archive
+from ..io import _BuildSpecExports
 from ..logger import logger
 from . import build
 
@@ -53,7 +55,7 @@ def stream_redirected(to=os.devnull, stream=None):
         # e.g. in pytest
         yield
         return
-    if type(to) == str:
+    if isinstance(to, str):
         to = open(to, "w")
     with os.fdopen(os.dup(stream_fd), "wb") as copied:
         stream.flush()
@@ -173,11 +175,11 @@ PYTHON_VERSION = Version(python_version())
 
 
 def get_target_python():
-    PYMAJOR = common.get_pyversion_major()
-    PYMINOR = common.get_pyversion_minor()
+    PYMAJOR = build_env.get_pyversion_major()
+    PYMINOR = build_env.get_pyversion_minor()
     tp = TargetPython(
         py_ver=(int(PYMAJOR), int(PYMINOR)),
-        platforms=[common.platform()],
+        platforms=[build_env.platform()],
         abis=[f"cp{PYMAJOR}{PYMINOR}"],
     )
     return tp
@@ -233,9 +235,9 @@ def get_metadata_for_wheel(url):
 
 
 class PyPIProvider(APBase):
-    BUILD_FLAGS: list[str] = []
+    BUILD_FLAGS: ConfigSettingsType = {}
     BUILD_SKIP: list[str] = []
-    BUILD_EXPORTS: str = ""
+    BUILD_EXPORTS: _BuildSpecExports = []
 
     def __init__(self, build_dependencies: bool):
         self.build_dependencies = build_dependencies
@@ -302,7 +304,7 @@ class PyPIProvider(APBase):
 def _get_json_package_list(fname: Path) -> Generator[str, None, None]:
     json_data = json.load(fname.open())
     if "packages" in json_data:
-        # pyodide repodata.json format
+        # pyodide-lock.json format
         yield from json_data["packages"].keys()
     else:
         # jupyterlite all.json format
@@ -336,8 +338,8 @@ def _resolve_and_build(
     requirements = []
 
     target_env = {
-        "python_version": common.get_pyversion_major_minor(),
-        "sys_platform": common.platform().split("_")[0],
+        "python_version": build_env.get_pyversion_major_minor(),
+        "sys_platform": build_env.platform().split("_")[0],
         "extra": ",".join(extras),
     }
 
@@ -376,8 +378,8 @@ def build_wheels_from_pypi_requirements(
     target_folder: Path,
     build_dependencies: bool,
     skip_dependency: list[str],
-    exports: str,
-    build_flags: list[str],
+    exports: _BuildSpecExports,
+    config_settings: ConfigSettingsType,
     output_lockfile: str | None,
 ) -> None:
     """
@@ -386,7 +388,7 @@ def build_wheels_from_pypi_requirements(
     """
     _parse_skip_list(skip_dependency)
     PyPIProvider.BUILD_EXPORTS = exports
-    PyPIProvider.BUILD_FLAGS = build_flags
+    PyPIProvider.BUILD_FLAGS = config_settings
     _resolve_and_build(
         reqs,
         target_folder,
@@ -400,8 +402,8 @@ def build_dependencies_for_wheel(
     wheel: Path,
     extras: list[str],
     skip_dependency: list[str],
-    exports: str,
-    build_flags: list[str],
+    exports: _BuildSpecExports,
+    config_settings: ConfigSettingsType,
     output_lockfile: str | None,
     compression_level: int = 6,
 ) -> None:
@@ -416,7 +418,7 @@ def build_dependencies_for_wheel(
     _parse_skip_list(skip_dependency)
 
     PyPIProvider.BUILD_EXPORTS = exports
-    PyPIProvider.BUILD_FLAGS = build_flags
+    PyPIProvider.BUILD_FLAGS = config_settings
     with ZipFile(wheel) as z:
         for n in z.namelist():
             if n.endswith(".dist-info/METADATA"):

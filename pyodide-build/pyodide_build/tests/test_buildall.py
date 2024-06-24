@@ -4,11 +4,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pyodide_lock.spec import PackageSpec
 
 from pyodide_build import buildall
-from pyodide_build.pywasmcross import BuildArgs
+from pyodide_build.build_env import BuildArgs
 
 RECIPE_DIR = Path(__file__).parent / "_test_recipes"
+BUILD_DIR = RECIPE_DIR
 
 
 def test_generate_dependency_graph():
@@ -46,13 +48,18 @@ def test_generate_dependency_graph_disabled():
     assert set(pkg_map.keys()) == set()
 
 
-def test_generate_repodata(tmp_path):
+def test_generate_lockfile(tmp_path):
     pkg_map = buildall.generate_dependency_graph(
         RECIPE_DIR, {"pkg_1", "pkg_2", "libtest", "libtest_shared"}
     )
     hashes = {}
     for pkg in pkg_map.values():
-        pkg.file_name = pkg.file_name or pkg.name + ".whl"
+        if not pkg.file_name:
+            match pkg.package_type:
+                case "package":
+                    pkg.file_name = pkg.name + f"-{pkg.version}-py3-none-any.whl"
+                case _:
+                    pkg.file_name = pkg.name + ".zip"
         # Write dummy package file for SHA-256 hash verification
         with zipfile.ZipFile(tmp_path / pkg.file_name, "w") as whlzip:
             whlzip.writestr(pkg.file_name, data=pkg.file_name)
@@ -60,36 +67,32 @@ def test_generate_repodata(tmp_path):
         with open(tmp_path / pkg.file_name, "rb") as f:
             hashes[pkg.name] = hashlib.sha256(f.read()).hexdigest()
 
-    package_data = buildall.generate_repodata(tmp_path, pkg_map)
-    assert set(package_data.keys()) == {"info", "packages"}
-    assert set(package_data["info"].keys()) == {"arch", "platform", "version", "python"}
-    assert package_data["info"]["arch"] == "wasm32"
-    assert package_data["info"]["platform"].startswith("emscripten")
+    package_data = buildall.generate_lockfile(tmp_path, pkg_map)
+    assert package_data.info.arch == "wasm32"
+    assert package_data.info.platform.startswith("emscripten")
 
-    assert set(package_data["packages"]) == {
-        "pkg_1",
-        "pkg_1_1",
-        "pkg_2",
-        "pkg_3",
-        "pkg_3_1",
-        "libtest_shared",
+    assert set(package_data.packages) == {
+        "pkg-1",
+        "pkg-1-1",
+        "pkg-2",
+        "pkg-3",
+        "pkg-3-1",
+        "libtest-shared",
     }
-    assert package_data["packages"]["pkg_1"] == {
-        "name": "pkg_1",
-        "version": "1.0.0",
-        "file_name": "pkg_1.whl",
-        "depends": ["pkg_1_1", "pkg_3", "libtest_shared"],
-        "imports": ["pkg_1"],
-        "package_type": "package",
-        "install_dir": "site",
-        "sha256": hashes["pkg_1"],
-    }
-
-    assert (
-        package_data["packages"]["libtest_shared"]["package_type"] == "shared_library"
+    assert package_data.packages["pkg-1"] == PackageSpec(
+        name="pkg_1",
+        version="1.0.0",
+        file_name="pkg_1-1.0.0-py3-none-any.whl",
+        depends=["pkg_1_1", "pkg_3", "libtest_shared"],
+        imports=["pkg_1"],
+        package_type="package",
+        install_dir="site",
+        sha256=hashes["pkg_1"],
     )
 
-    sharedlib_imports = package_data["packages"]["libtest_shared"]["imports"]
+    assert package_data.packages["libtest-shared"].package_type == "shared_library"
+
+    sharedlib_imports = package_data.packages["libtest-shared"].imports
     assert not sharedlib_imports, (
         "shared libraries should not have any imports, but got " f"{sharedlib_imports}"
     )
@@ -100,14 +103,16 @@ def test_build_dependencies(n_jobs, monkeypatch):
     build_list = []
 
     class MockPackage(buildall.Package):
-        def build(self, args: Any) -> None:
+        def build(self, args: Any, build_dir: Path) -> None:
             build_list.append(self.name)
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
 
     pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_1", "pkg_2"})
 
-    buildall.build_from_graph(pkg_map, BuildArgs(), n_jobs=n_jobs, force_rebuild=True)
+    buildall.build_from_graph(
+        pkg_map, BuildArgs(), BUILD_DIR, n_jobs=n_jobs, force_rebuild=True
+    )
 
     assert set(build_list) == {
         "pkg_1",
@@ -127,7 +132,7 @@ def test_build_error(n_jobs, monkeypatch):
     """Try building all the dependency graph, without the actual build operations"""
 
     class MockPackage(buildall.Package):
-        def build(self, args: Any) -> None:
+        def build(self, args: Any, build_dir: Path) -> None:
             raise ValueError("Failed build")
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
@@ -136,7 +141,7 @@ def test_build_error(n_jobs, monkeypatch):
 
     with pytest.raises(ValueError, match="Failed build"):
         buildall.build_from_graph(
-            pkg_map, BuildArgs(), n_jobs=n_jobs, force_rebuild=True
+            pkg_map, BuildArgs(), BUILD_DIR, n_jobs=n_jobs, force_rebuild=True
         )
 
 

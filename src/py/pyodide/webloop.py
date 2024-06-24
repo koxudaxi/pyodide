@@ -11,7 +11,7 @@ from typing import Any, TypeVar, overload
 from .ffi import IN_BROWSER, create_once_callable
 
 if IN_BROWSER:
-    from js import setTimeout
+    from pyodide_js._api import scheduleCallback
 
 T = TypeVar("T")
 S = TypeVar("S")
@@ -30,32 +30,28 @@ class PyodideFuture(Future[T]):
         self,
         onfulfilled: None,
         onrejected: Callable[[BaseException], Awaitable[S]],
-    ) -> "PyodideFuture[S]":
-        ...
+    ) -> "PyodideFuture[S]": ...
 
     @overload
     def then(
         self,
         onfulfilled: None,
         onrejected: Callable[[BaseException], S],
-    ) -> "PyodideFuture[S]":
-        ...
+    ) -> "PyodideFuture[S]": ...
 
     @overload
     def then(
         self,
         onfulfilled: Callable[[T], Awaitable[S]],
         onrejected: Callable[[BaseException], Awaitable[S]] | None = None,
-    ) -> "PyodideFuture[S]":
-        ...
+    ) -> "PyodideFuture[S]": ...
 
     @overload
     def then(
         self,
         onfulfilled: Callable[[T], S],
         onrejected: Callable[[BaseException], S] | None = None,
-    ) -> "PyodideFuture[S]":
-        ...
+    ) -> "PyodideFuture[S]": ...
 
     def then(
         self,
@@ -117,7 +113,7 @@ class PyodideFuture(Future[T]):
             except Exception as result_exception:
                 result.set_exception(result_exception)
                 return
-            result.set_result(r)  # type:ignore[arg-type]
+            result.set_result(r)
 
         def wrapper(fut: Future[T]) -> None:
             asyncio.ensure_future(callback(fut))
@@ -128,12 +124,10 @@ class PyodideFuture(Future[T]):
     @overload
     def catch(
         self, onrejected: Callable[[BaseException], Awaitable[S]]
-    ) -> "PyodideFuture[S]":
-        ...
+    ) -> "PyodideFuture[S]": ...
 
     @overload
-    def catch(self, onrejected: Callable[[BaseException], S]) -> "PyodideFuture[S]":
-        ...
+    def catch(self, onrejected: Callable[[BaseException], S]) -> "PyodideFuture[S]": ...
 
     def catch(
         self, onrejected: Callable[[BaseException], object]
@@ -229,6 +223,10 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         return False
 
+    def close(self) -> None:
+        """Ignore request to close WebLoop"""
+        pass
+
     def _check_closed(self):
         """Used in create_task.
 
@@ -270,7 +268,7 @@ class WebLoop(asyncio.AbstractEventLoop):
     def call_soon(
         self,
         callback: Callable[..., Any],
-        *args: Any,
+        *args: Any,  # type: ignore[override]
         context: contextvars.Context | None = None,
     ) -> asyncio.Handle:
         """Arrange for a callback to be called as soon as possible.
@@ -286,7 +284,7 @@ class WebLoop(asyncio.AbstractEventLoop):
     def call_soon_threadsafe(
         self,
         callback: Callable[..., Any],
-        *args: Any,
+        *args: Any,  # type: ignore[override]
         context: contextvars.Context | None = None,
     ) -> asyncio.Handle:
         """Like ``call_soon()``, but thread-safe.
@@ -339,7 +337,10 @@ class WebLoop(asyncio.AbstractEventLoop):
                 else:
                     raise
 
-        setTimeout(create_once_callable(run_handle), delay * 1000)
+        scheduleCallback(
+            create_once_callable(run_handle, _may_syncify=True), delay * 1000
+        )
+
         return h
 
     def _decrement_in_progress(self, *args):

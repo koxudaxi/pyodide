@@ -10,10 +10,14 @@
 // This implements the JavaScript Proxy handler interface as defined here:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
 
-JsRef
-pyproxy_new_ex(PyObject* obj, bool capture_this, bool roundtrip);
+JsVal
+pyproxy_new_ex(PyObject* obj,
+               bool capture_this,
+               bool roundtrip,
+               bool register,
+               bool is_json_adaptor);
 
-JsRef
+JsVal
 pyproxy_new(PyObject* obj);
 
 /**
@@ -22,7 +26,7 @@ pyproxy_new(PyObject* obj);
  * Fatally fails if x is not NULL or a valid JsRef.
  */
 int
-pyproxy_Check(JsRef x);
+pyproxy_Check(JsVal x);
 
 /**
  * If x is a PyProxy, return a borrowed version of the wrapped PyObject. Returns
@@ -30,19 +34,22 @@ pyproxy_Check(JsRef x);
  * is not NULL or a valid JsRef.
  */
 PyObject*
-pyproxy_AsPyObject(JsRef x);
+pyproxy_AsPyObject(JsVal x);
 
 /**
  * Destroy a list of PyProxies.
  */
 void
-destroy_proxies(JsRef proxies_id, char* msg);
+destroy_proxies(JsVal proxies, Js_Identifier* msg);
+
+void
+gc_register_proxies(JsVal proxies);
 
 /**
  * Destroy a PyProxy.
  */
 void
-destroy_proxy(JsRef proxy, char* msg);
+destroy_proxy(JsVal proxy, Js_Identifier* msg);
 
 /**
  * Wrap a Python callable in a JavaScript function that can be called once.
@@ -50,8 +57,8 @@ destroy_proxy(JsRef proxy, char* msg);
  * decremented. The Proxy also has a "destroy" API that can decrement the
  * reference count without calling the function.
  */
-JsRef
-create_once_callable(PyObject* obj);
+JsVal
+create_once_callable(PyObject* obj, bool may_syncify);
 
 /**
  * Wrap a pair of Python callables in a JavaScript function that can be called
@@ -60,13 +67,16 @@ create_once_callable(PyObject* obj);
  * "destroy" API that can decrement the reference counts without calling the
  * function. Intended for use with `promise.then`.
  */
-JsRef
+JsVal
 create_promise_handles(PyObject* onfulfilled,
                        PyObject* onrejected,
-                       JsRef done_callback_id);
+                       JsVal done_callback_id);
 
 int
 pyproxy_init(PyObject* core);
+
+bool
+py_is_awaitable(PyObject* o);
 
 // These are defined as an enum in Python.h but we want to use them in
 // pyproxy.ts.

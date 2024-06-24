@@ -75,14 +75,15 @@ class _SourceSpec(BaseModel):
         return values
 
 
-_BuildSpecExports = Literal["pyinit", "requested", "whole_archive"]
+_ExportTypes = Literal["pyinit", "requested", "whole_archive"]
+_BuildSpecExports = _ExportTypes | list[str]
 _BuildSpecTypes = Literal[
     "package", "static_library", "shared_library", "cpython_module"
 ]
 
 
 class _BuildSpec(BaseModel):
-    exports: _BuildSpecExports | list[_BuildSpecExports] = "pyinit"
+    exports: _BuildSpecExports = "pyinit"
     backend_flags: str = Field("", alias="backend-flags")
     cflags: str = ""
     cxxflags: str = ""
@@ -92,6 +93,7 @@ class _BuildSpec(BaseModel):
     script: str | None = None
     post: str | None = None
     unvendor_tests: bool = Field(True, alias="unvendor-tests")
+    retain_test_patterns: list[str] = Field([], alias="_retain-test-patterns")
     vendor_sharedlib: bool = Field(False, alias="vendor-sharedlib")
     cross_build_env: bool = Field(False, alias="cross-build-env")
     cross_build_files: list[str] = Field([], alias="cross-build-files")
@@ -150,6 +152,10 @@ class _AboutSpec(BaseModel):
         extra = pydantic.Extra.forbid
 
 
+class _ExtraSpec(BaseModel):
+    recipe_maintainers: list[str] = Field([], alias="recipe-maintainers")
+
+
 class MetaConfig(BaseModel):
     package: _PackageSpec
     source: _SourceSpec = _SourceSpec()
@@ -157,6 +163,7 @@ class MetaConfig(BaseModel):
     requirements: _RequirementsSpec = _RequirementsSpec()
     test: _TestSpec = _TestSpec()
     about: _AboutSpec = _AboutSpec()
+    extra: _ExtraSpec = _ExtraSpec()
 
     class Config:
         extra = pydantic.Extra.forbid
@@ -176,6 +183,8 @@ class MetaConfig(BaseModel):
         config_raw = yaml.safe_load(stream)
 
         config = cls(**config_raw)
+        if config.source.path:
+            config.source.path = path.parent / config.source.path
         return config
 
     def to_yaml(self, path: Path) -> None:

@@ -3,53 +3,31 @@ import subprocess
 import pytest
 
 from pyodide_build.pywasmcross import (
-    BuildArgs,
+    CrossCompileArgs,
     calculate_exports,
     filter_objects,
     get_cmake_compiler_flags,
-    get_library_output,
     handle_command_generate_args,
-    replay_f2c,
+    is_link_cmd,
+    replay_genargs_handle_dashI,
 )
 
 
 @pytest.fixture(scope="function")
 def build_args():
-    yield BuildArgs(
+    yield CrossCompileArgs(
         cflags="",
         cxxflags="",
         ldflags="",
         target_install_dir="",
-        host_install_dir="",
         pythoninclude="python/include",
         exports="whole_archive",
     )
 
 
-def _args_wrapper(func):
-    """Convert function to take as input / return a string instead of a
-    list of arguments
-
-    Also sets dryrun=True
-    """
-
-    def _inner(line, *pargs):
-        args = line.split()
-        res = func(args, *pargs, dryrun=True)
-        if hasattr(res, "__len__"):
-            return " ".join(res)
-        else:
-            return res
-
-    return _inner
-
-
-f2c_wrap = _args_wrapper(replay_f2c)
-
-
-def generate_args(line: str, args: BuildArgs, is_link_cmd: bool = False) -> str:
+def generate_args(line: str, args: CrossCompileArgs, is_link_cmd: bool = False) -> str:
     splitline = line.split()
-    res = handle_command_generate_args(splitline, args, is_link_cmd)
+    res = handle_command_generate_args(splitline, args)
 
     if res[0] in ("emcc", "em++"):
         for arg in [
@@ -75,7 +53,7 @@ def generate_args(line: str, args: BuildArgs, is_link_cmd: bool = False) -> str:
 
 def test_handle_command(build_args):
     args = build_args
-    assert handle_command_generate_args(["gcc", "-print-multiarch"], args, True) == [
+    assert handle_command_generate_args(["gcc", "-print-multiarch"], args) == [
         "echo",
         "wasm32-emscripten",
     ]
@@ -100,7 +78,7 @@ def test_handle_command(build_args):
     )
 
     # check cxxflags injection and cpp detection
-    args = BuildArgs(
+    args = CrossCompileArgs(
         cflags="-I./lib2",
         cxxflags="-std=c++11",
         ldflags="-lm",
@@ -112,7 +90,7 @@ def test_handle_command(build_args):
     )
 
     # check ldflags injection
-    args = BuildArgs(
+    args = CrossCompileArgs(
         cflags="",
         cxxflags="",
         ldflags="-lm",
@@ -126,8 +104,8 @@ def test_handle_command(build_args):
 
     # Test that repeated libraries are removed
     assert (
-        generate_args("gcc test.o -lbob -ljim -ljim -lbob -o test.so", args)
-        == "emcc test.o -lbob -ljim -o test.so"
+        generate_args("gcc test.o -lbob -ljim -ljim -lbob -o test.so", args, True)
+        == "emcc test.o -lbob -ljim -o test.so -lm"
     )
 
 
@@ -145,13 +123,27 @@ def test_handle_command_ldflags(build_args):
     )
 
 
-def test_f2c():
-    assert f2c_wrap("gfortran test.f") == "gcc test.c"
-    assert f2c_wrap("gcc test.c") is None
-    assert f2c_wrap("gfortran --version") is None
+def test_replay_genargs_handle_dashI(monkeypatch):
+    import sys
+
+    mock_prefix = "/mock_prefix"
+    mock_base_prefix = "/mock_base_prefix"
+    monkeypatch.setattr(sys, "prefix", mock_prefix)
+    monkeypatch.setattr(sys, "base_prefix", mock_base_prefix)
+
+    target_dir = "/target"
+    target_cpython_include = "/target/include/python3.11"
+
+    assert replay_genargs_handle_dashI("-I/usr/include", target_dir) is None
     assert (
-        f2c_wrap("gfortran --shared -c test.o -o test.so")
-        == "gcc --shared -c test.o -o test.so"
+        replay_genargs_handle_dashI(f"-I{mock_prefix}/include/python3.11", target_dir)
+        == f"-I{target_cpython_include}"
+    )
+    assert (
+        replay_genargs_handle_dashI(
+            f"-I{mock_base_prefix}/include/python3.11", target_dir
+        )
+        == f"-I{target_cpython_include}"
     )
 
 
@@ -159,11 +151,11 @@ def test_conda_unsupported_args(build_args):
     # Check that compile arguments that are not supported by emcc and are sometimes
     # used in conda are removed.
     args = build_args
-    assert generate_args("gcc -c test.o -B /compiler_compat -o test.so", args) == (
-        "emcc -c test.o -o test.so"
-    )
+    assert generate_args(
+        "gcc -c test.o -B /compiler_compat -o test.so", args, True
+    ) == ("emcc -c test.o -o test.so")
 
-    assert generate_args("gcc -c test.o -Wl,--sysroot=/ -o test.so", args) == (
+    assert generate_args("gcc -c test.o -Wl,--sysroot=/ -o test.so", args, True) == (
         "emcc -c test.o -o test.so"
     )
 
@@ -260,16 +252,13 @@ def test_get_cmake_compiler_flags():
 
 def test_handle_command_cmake(build_args):
     args = build_args
-    assert "--fresh" in handle_command_generate_args(["cmake", "./"], args, False)
+    assert "--fresh" in handle_command_generate_args(["cmake", "./"], args)
 
     build_cmd = ["cmake", "--build", "." "--target", "target"]
-    assert handle_command_generate_args(build_cmd, args, False) == build_cmd
+    assert handle_command_generate_args(build_cmd, args) == build_cmd
 
 
-def test_get_library_output():
-    assert get_library_output(["test.so"]) == "test.so"
-    assert get_library_output(["test.so.1.2.3"]) == "test.so.1.2.3"
-    assert (
-        get_library_output(["test", "test.a", "test.o", "test.c", "test.cpp", "test.h"])
-        is None
-    )
+def test_is_link_cmd():
+    assert is_link_cmd(["test.so"])
+    assert is_link_cmd(["test.so.1.2.3"])
+    assert not is_link_cmd(["test", "test.a", "test.o", "test.c", "test.cpp", "test.h"])

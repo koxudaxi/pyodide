@@ -1,20 +1,30 @@
 import os
 from pathlib import Path
-from typing import Any
 
-from .. import common, pypabuild
+from build import ConfigSettingsType
+
+from .. import build_env, common, pypabuild
+from ..io import _BuildSpecExports
 
 
-def run(srcdir: Path, outdir: Path, exports: Any, args: list[str]) -> Path:
+def run(
+    srcdir: Path,
+    outdir: Path,
+    exports: _BuildSpecExports,
+    config_settings: ConfigSettingsType,
+) -> Path:
     outdir = outdir.resolve()
-    cflags = common.get_build_flag("SIDE_MODULE_CFLAGS")
+    cflags = build_env.get_build_flag("SIDE_MODULE_CFLAGS")
     cflags += f" {os.environ.get('CFLAGS', '')}"
-    cxxflags = common.get_build_flag("SIDE_MODULE_CXXFLAGS")
+    cxxflags = build_env.get_build_flag("SIDE_MODULE_CXXFLAGS")
     cxxflags += f" {os.environ.get('CXXFLAGS', '')}"
-    ldflags = common.get_build_flag("SIDE_MODULE_LDFLAGS")
+    ldflags = build_env.get_build_flag("SIDE_MODULE_LDFLAGS")
     ldflags += f" {os.environ.get('LDFLAGS', '')}"
+    target_install_dir = os.environ.get(
+        "TARGETINSTALLDIR", build_env.get_build_flag("TARGETINSTALLDIR")
+    )
     env = os.environ.copy()
-    env.update(common.get_build_environment_vars())
+    env.update(build_env.get_build_environment_vars())
 
     build_env_ctx = pypabuild.get_build_env(
         env=env,
@@ -22,10 +32,15 @@ def run(srcdir: Path, outdir: Path, exports: Any, args: list[str]) -> Path:
         cflags=cflags,
         cxxflags=cxxflags,
         ldflags=ldflags,
-        target_install_dir="",
+        target_install_dir=target_install_dir,
         exports=exports,
     )
 
     with build_env_ctx as env:
-        built_wheel = pypabuild.build(srcdir, outdir, env, " ".join(args))
-    return Path(built_wheel)
+        built_wheel = pypabuild.build(srcdir, outdir, env, config_settings)
+
+    wheel_path = Path(built_wheel)
+    with common.modify_wheel(wheel_path) as wheel_dir:
+        build_env.replace_so_abi_tags(wheel_dir)
+
+    return wheel_path

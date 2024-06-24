@@ -4,7 +4,13 @@ import rlcompleter
 import sys
 import traceback
 from asyncio import Future, ensure_future
-from codeop import CommandCompiler, Compile, _features  # type: ignore[attr-defined]
+from codeop import (  # type: ignore[attr-defined]
+    CommandCompiler,
+    Compile,
+    PyCF_ALLOW_INCOMPLETE_INPUT,
+    PyCF_DONT_IMPLY_DEDENT,
+    _features,
+)
 from collections.abc import Callable, Generator
 from contextlib import (
     ExitStack,
@@ -92,7 +98,9 @@ class _Compile(Compile):
         self.return_mode = return_mode
         self.quiet_trailing_semicolon = quiet_trailing_semicolon
 
-    def __call__(self, source: str, filename: str, symbol: str) -> CodeRunner:  # type: ignore[override]
+    def __call__(  # type: ignore[override]
+        self, source: str, filename: str, symbol: str, *, incomplete_input: bool = True
+    ) -> CodeRunner:
         return_mode = self.return_mode
         try:
             if self.quiet_trailing_semicolon and should_quiet(source):
@@ -101,6 +109,10 @@ class _Compile(Compile):
             # Invalid code, let the Python parser throw the error later.
             pass
 
+        flags = self.flags
+        if not incomplete_input:
+            flags &= ~PyCF_DONT_IMPLY_DEDENT
+            flags &= ~PyCF_ALLOW_INCOMPLETE_INPUT
         code_runner = CodeRunner(
             source,
             mode=symbol,
@@ -271,9 +283,9 @@ class Console:
         self.buffer = []
         self._lock = asyncio.Lock()
         self._streams_redirected = False
-        self._stream_generator: Generator[
-            None, None, None
-        ] | None = None  # track persistent stream redirection
+        self._stream_generator: Generator[None, None, None] | None = (
+            None  # track persistent stream redirection
+        )
         if persistent_stream_redirection:
             self.persistent_redirect_streams()
         self._completer = rlcompleter.Completer(self.globals)
@@ -386,6 +398,7 @@ class Console:
         This doesn't include a stack trace because there isn't one. The actual
         error object is stored into :py:data:`sys.last_value`.
         """
+        sys.last_exc = e  # type:ignore[attr-defined]
         sys.last_type = type(e)
         sys.last_value = e
         sys.last_traceback = None
@@ -407,6 +420,7 @@ class Console:
 
         The actual error object is stored into :py:data:`sys.last_value`.
         """
+        sys.last_exc = e  # type:ignore[attr-defined]
         sys.last_type = type(e)
         sys.last_value = e
         sys.last_traceback = e.__traceback__

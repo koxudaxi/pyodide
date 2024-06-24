@@ -23,6 +23,28 @@ file(TO_CMAKE_PATH "${_emconfig_output}" _emcache_output)
 set(EMSCRIPTEN_CMAKE_TOOLCHAIN_FILE "${_emconfig_output}/cmake/Modules/Platform/Emscripten.cmake" CACHE FILEPATH "Path to Emscripten CMake toolchain file.")
 include("${EMSCRIPTEN_CMAKE_TOOLCHAIN_FILE}")
 
+# From Emscripten 3.1.33, CACHE property was removed from these variables,
+# so it is not possible to overwrite them by -D<var>=<value>.
+# See: https://github.com/emscripten-core/emscripten/pull/18764
+# But we need to do it, so set them again here...
+unset(CMAKE_C_COMPILER)
+unset(CMAKE_CXX_COMPILER)
+unset(CMAKE_AR)
+unset(CMAKE_RANLIB)
+unset(CMAKE_C_COMPILER_AR)
+unset(CMAKE_CXX_COMPILER_AR)
+unset(CMAKE_C_COMPILER_RANLIB)
+unset(CMAKE_CXX_COMPILER_RANLIB)
+
+set(CMAKE_C_COMPILER "${EMSCRIPTEN_ROOT_PATH}/emcc${EMCC_SUFFIX}" CACHE FILEPATH "Emscripten emcc")
+set(CMAKE_CXX_COMPILER "${EMSCRIPTEN_ROOT_PATH}/em++${EMCC_SUFFIX}" CACHE FILEPATH "Emscripten em++")
+set(CMAKE_AR "${EMSCRIPTEN_ROOT_PATH}/emar${EMCC_SUFFIX}" CACHE FILEPATH "Emscripten ar")
+set(CMAKE_RANLIB "${EMSCRIPTEN_ROOT_PATH}/emranlib${EMCC_SUFFIX}" CACHE FILEPATH "Emscripten ranlib")
+set(CMAKE_C_COMPILER_AR "${CMAKE_AR}" CACHE FILEPATH "Emscripten ar")
+set(CMAKE_CXX_COMPILER_AR "${CMAKE_AR}" CACHE FILEPATH "Emscripten ar")
+set(CMAKE_C_COMPILER_RANLIB "${CMAKE_RANLIB}" CACHE FILEPATH "Emscripten ranlib")
+set(CMAKE_CXX_COMPILER_RANLIB "${CMAKE_RANLIB}" CACHE FILEPATH "Emscripten ranlib")
+
 # Note: this is False in original Emscripten toolchain,
 #       however we always want to allow build shared libs
 #       (See also: https://github.com/emscripten-core/emscripten/pull/16281)
@@ -83,3 +105,9 @@ endif()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} $ENV{SIDE_MODULE_CFLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{SIDE_MODULE_CXXFLAGS}")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} $ENV{SIDE_MODULE_LDFLAGS}")
+
+# By default, we don't want to add version to the shared library.
+# See: https://github.com/pyodide/pyodide/issues/4335
+if(NOT DEFINED CMAKE_PLATFORM_NO_VERSIONED_SONAME)
+  set(CMAKE_PLATFORM_NO_VERSIONED_SONAME 1)
+endif()

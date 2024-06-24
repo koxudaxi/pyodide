@@ -360,22 +360,18 @@ def test_await_pyproxy_eval_async(selenium):
         == 2
     )
 
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             let finally_occurred = false;
             let c = pyodide._api.pyodide_code.eval_code_async("1+1");
             let result = await c.finally(() => { finally_occurred = true; });
             c.destroy();
             return [result, finally_occurred];
             """
-        )
-        == [2, True]
-    )
+    ) == [2, True]
 
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             let finally_occurred = false;
             let err_occurred = false;
             let c = pyodide._api.pyodide_code.eval_code_async("raise ValueError('hi')");
@@ -387,9 +383,7 @@ def test_await_pyproxy_eval_async(selenium):
             c.destroy();
             return [finally_occurred, err_occurred];
             """
-        )
-        == [True, True]
-    )
+    ) == [True, True]
 
     assert selenium.run_js(
         """
@@ -406,7 +400,7 @@ def test_await_pyproxy_eval_async(selenium):
         """
         let c = pyodide._api.pyodide_code.eval_code_async(`
             from js import fetch
-            await (await fetch('repodata.json')).json()
+            await (await fetch('pyodide-lock.json')).json()
         `);
         let result = await c;
         c.destroy();
@@ -421,7 +415,7 @@ def test_await_pyproxy_async_def(selenium):
         let packages = await pyodide.runPythonAsync(`
             from js import fetch
             async def temp():
-                return await (await fetch('repodata.json')).json()
+                return await (await fetch('pyodide-lock.json')).json()
             await temp()
         `);
         return (!!packages.packages) && (!!packages.info);

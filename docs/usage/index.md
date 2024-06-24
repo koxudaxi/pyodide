@@ -41,34 +41,19 @@ To avoid confusion, note that:
 
 ### Supported browsers
 
-Pyodide works in any modern web browser with WebAssembly support.
+Webassembly support in browsers is evolving very rapidly,
+and we recommend using the latest browsers whenever possible
+to take full advantage of Pyodide and its webassembly features.
+If you are using an older browser, some features may not work properly.
 
-**Tier 1** browsers are tested as part of the test suite with continuous integration,
+Currently, Pyodide is being tested against the following browser versions,
+so we recommend using a browser version at least equal to or higher than these.
 
-| Browser | Minimal supported version | Release date    |
-| ------- | ------------------------- | --------------- |
-| Firefox | 70.0                      | 22 October 2019 |
-| Chrome  | 71.0                      | 4 December 2018 |
-
-Chrome 89 and 90 have bugs in the webassembly compiler which makes using Pyodide
-with them unstable. Known problems occur in numpy and have been observed
-occasionally in other packages. See {issue}`1384`.
-
-```{note}
-Latest browser versions generally provide more reliable WebAssembly support
-and will run Pyodide faster, so their use is recommended.
-```
-
-**Tier 2** browsers are known to work, but they are not systematically tested in
-Pyodide,
-
-| Browser | Minimal supported version | Release date      |
-| ------- | ------------------------- | ----------------- |
-| Safari  | 14.0                      | 15 September 2020 |
-| Edge    | 80                        | 26 February 2020  |
-
-Other browsers with WebAssembly support might also work however they are not
-officially supported.
+| Browser | Version | Release date  |
+| ------- | ------- | ------------- |
+| Firefox | 112     | 11 April 2023 |
+| Chrome  | 112     | 29 March 2023 |
+| Safari  | 16.4    | 27 March 2023 |
 
 ## Web Workers
 
@@ -82,6 +67,11 @@ It's also possible to run {ref}`Pyodide in a Service Worker <using_from_service_
 If you're not sure whether you need web workers or service workers, here's an [overview and comparison of the two](https://web.dev/workers-overview/).
 
 ## Node.js
+
+```{warning}
+Starting with Pyodide 0.25.0, Node.js < 18 is no longer officially supported.
+Older versions of Node.js might still work, but they are not tested or guaranteed to work.
+```
 
 ```{note}
 The following instructions have been tested with Node.js 18.5.0. To use
@@ -117,8 +107,6 @@ hello_python().then((result) => {
 
 ```
 $ node hello_python.js
-Loading distutils
-Loaded distutils
 Python says that 1+1= 2
 ```
 
@@ -132,53 +120,19 @@ Type ".help" for more information.
 > const { loadPyodide } = require("pyodide");
 undefined
 > let pyodide = await loadPyodide();
-Loading distutils
-Loaded distutils
 undefined
 > await pyodide.runPythonAsync("1+1");
 2
 ```
 
-### Node.js versions <0.17
-
-- `Node.js` versions 14.x and 16.x: to use certain features of Pyodide you
-  need to manually install `node-fetch`, e.g. by doing `npm install node-fetch`.
-
-- `Node.js v14.x`: you need to pass the option `--experimental-wasm-bigint`
-  when starting Node. Note that this flag is not documented by `node --help`
-  and moreover, if you pass `--experimental-wasm-bigint` to node >14 it is an
-  error:
-
-```
-$ node -v
-v14.20.0
-
-$ node --experimental-wasm-bigint hello_python.js
-warning: no blob constructor, cannot create blobs with mimetypes
-warning: no BlobBuilder
-Loading distutils
-Loaded distutils
-Python says that 1+1= 2
-```
-
-If you wish to suppress the blob constructor warnings which appear in node <18,
-the following code works in node >= v14.18 (do this before
-calling `loadPyodide`):
-
-```js
-globalThis.Blob = require("node:buffer").Blob;
-```
-
-However, in versions of node < v16.17, this will print an `ExperimentalWarning`.
-If you also don't want the `ExperimentalWarning`, you can use
-[cross-blob](https://www.npmjs.com/package/cross-blob) to polyfill `Blob`.
-
 ```{eval-rst}
 .. toctree::
    :hidden:
 
-   webworker.md
    loading-custom-python-code.md
    file-system.md
+   accessing-files.md
+   webworker.md
    service-worker.md
+   working-with-bundlers.md
 ```

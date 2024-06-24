@@ -1,11 +1,11 @@
 package:
   name: termcolor
-  version: 2.2.0
+  version: 2.4.0
   top-level:
     - termcolor
 source:
-  url: https://files.pythonhosted.org/packages/e5/4e/b2a54a21092ad2d5d70b0140e4080811bee06a39cc8481651579fe865c89/termcolor-2.2.0.tar.gz
-  sha256: dfc8ac3f350788f23b2947b3e6cfa5a53b630b612e6cd8965a015a776020b99a
+  url: https://files.pythonhosted.org/packages/10/56/d7d66a84f96d804155f6ff2873d065368b25a07222a6fd51c4f24ef6d764/termcolor-2.4.0.tar.gz
+  sha256: aab9e56047c8ac41ed798fa36d892a37aca6b3e9159f3e0c24bc64a9b3ac7b7a
 about:
   home: http://pypi.python.org/pypi/termcolor
   PyPI: https://pypi.org/project/termcolor

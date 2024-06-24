@@ -1,6 +1,6 @@
 package:
   name: scipy
-  version: 1.10.1
+  version: 1.12.0
   tag:
     - min-scipy-stack
   top-level:
@@ -17,8 +17,8 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/84/a9/2bf119f3f9cff1f376f924e39cfae18dec92a1514784046d185731301281/scipy-1.10.1.tar.gz
-  sha256: 2cf9dfb80a7b4589ba4c40ce7588986d6d5cebc5457cad2c2880f6bc2d42f3a5
+  url: https://files.pythonhosted.org/packages/30/85/cdbf2c3c460fe5aae812917866392068a88d02f07de0fe31ce738734c477/scipy-1.12.0.tar.gz
+  sha256: 4bf5abab8a36d20193c698b0f1fc282c1d083c94723902c447e5d2f1780936a3
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
@@ -26,21 +26,19 @@ source:
     - patches/0003-fix-fotran-files-minpack.patch
     - patches/0004-gemm_-no-const.patch
     - patches/0005-make-int-return-values.patch
-    - patches/0006-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
-    - patches/0007-skip-fortran-fails-to-link.patch
-    - patches/0008-Remove-meson-requirements.patch
-    - patches/0009-Fix-fitpack.patch
-    # TODO remove the next patch when we upgrade to scipy 1.11, since it has
-    # been fixed upstream in https://github.com/scipy/scipy/pull/18124
-    - patches/0010-When-forward-declaring-print_soln-give-it-the-correc.patch
-    - patches/0011-Enable-long-double-support-in-Boost-library-for-emsc.patch
+    - patches/0007-Remove-test-modules-that-fails-to-build.patch
+    - patches/0008-Fix-fitpack.patch
+    - patches/0009-Fix-gees-calls.patch
 
 build:
   cflags: |
     -I$(WASM_LIBRARY_DIR)/include
     -Wno-return-type
     -DUNDERSCORE_G77
-  cxxflags: -fexceptions
+    -fvisibility=default
+  cxxflags: |
+    -fexceptions
+    -fvisibility=default
   ldflags: |
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
@@ -52,11 +50,11 @@ build:
   # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
     set -x
-    export PKG_CONFIG_LIBDIR=$WASM_PKG_CONFIG_PATH
     export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
     export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
 
     sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
+    sed -i 's/void DQA/int DQA/g' scipy/integrate/__quadpack.h
 
     # Change many functions that return void into functions that return int
     find scipy -name "*.c*" -type f | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
@@ -89,6 +87,10 @@ build:
 
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/_dsolve/SuperLU/SRC/input_error.c
+
+  _retain-test-patterns:
+    - "*_page_trend_test.py"
+    - "*bws_test.py"
 
   cross-build-env: true
   cross-build-files:
@@ -151,3 +153,7 @@ about:
   PyPI: https://pypi.org/project/scipy
   summary: "SciPy: Scientific Library for Python"
   license: BSD
+extra:
+  recipe-maintainers:
+    - lesteve
+    - steppi

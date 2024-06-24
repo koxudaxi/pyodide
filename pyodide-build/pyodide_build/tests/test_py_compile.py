@@ -173,8 +173,8 @@ def test_get_py_compiled_archive_name(tmp_path):
     assert _get_py_compiled_archive_name(tmp_path / "test3.tar.gz") is None
 
 
-@pytest.mark.parametrize("with_repodata", [True, False])
-def test_py_compile_archive_dir(tmp_path, with_repodata):
+@pytest.mark.parametrize("with_lockfile", [True, False])
+def test_py_compile_archive_dir(tmp_path, with_lockfile):
     archive_path = tmp_path / "test1.zip"
     with zipfile.ZipFile(archive_path, mode="w") as fh_zip:
         fh_zip.writestr("packageA/c/a.py", "1+1")
@@ -191,8 +191,8 @@ def test_py_compile_archive_dir(tmp_path, with_repodata):
         "packageB", base_dir=tmp_path, data=wheel_data, tag="py3-none-any"
     )
 
-    repodata_path = tmp_path / "repodata.json"
-    repodata = {
+    lockfile_path = tmp_path / "pyodide-lock.json"
+    lockfile = {
         "info": {"arch": "wasm32"},
         "packages": {
             "packageA": {"version": "1.0", "file_name": archive_path.name},
@@ -205,43 +205,45 @@ def test_py_compile_archive_dir(tmp_path, with_repodata):
         },
     }
 
+    ver = sys.version_info
+    cpver = f"cp{ver.major}{ver.minor}"
     expected_in = {"test1.zip", "packageB-0.1.0-py3-none-any.whl"}
-    expected_out = {"test1.zip", "packageb-0.1.0-cp311-none-any.whl"}
-    if with_repodata:
-        with open(repodata_path, "w") as fh:
-            json.dump(repodata, fh)
-        expected_in.add("repodata.json")
-        expected_out.add("repodata.json")
+    expected_out = {"test1.zip", f"packageb-0.1.0-{cpver}-none-any.whl"}
+    if with_lockfile:
+        with open(lockfile_path, "w") as fh:
+            json.dump(lockfile, fh)
+        expected_in.add("pyodide-lock.json")
+        expected_out.add("pyodide-lock.json")
 
     assert set(el.name for el in tmp_path.glob("*")) == expected_in
 
     mapping = _py_compile_archive_dir(tmp_path, keep=False)
 
     assert mapping == {
-        "packageB-0.1.0-py3-none-any.whl": "packageb-0.1.0-cp311-none-any.whl",
+        "packageB-0.1.0-py3-none-any.whl": f"packageb-0.1.0-{cpver}-none-any.whl",
         "test1.zip": "test1.zip",
     }
 
     assert set(el.name for el in tmp_path.glob("*")) == expected_out
 
-    if not with_repodata:
+    if not with_lockfile:
         return
 
-    with open(repodata_path) as fh:
-        repodata_new = json.load(fh)
+    with open(lockfile_path) as fh:
+        lockfile_new = json.load(fh)
 
-    assert repodata_new["info"] == repodata["info"]
-    assert repodata_new["packages"]["packageA"]["file_name"] == "test1.zip"
+    assert lockfile_new["info"] == lockfile["info"]
+    assert lockfile_new["packages"]["packageA"]["file_name"] == "test1.zip"
     # sha256 is not reproducible, since it depends on the timestamp
-    assert len(repodata_new["packages"]["packageA"]["sha256"]) == 64
+    assert len(lockfile_new["packages"]["packageA"]["sha256"]) == 64
 
     assert (
-        repodata_new["packages"]["packageB"]["file_name"]
-        == "packageb-0.1.0-cp311-none-any.whl"
+        lockfile_new["packages"]["packageB"]["file_name"]
+        == f"packageb-0.1.0-{cpver}-none-any.whl"
     )
-    assert len(repodata_new["packages"]["packageA"]["sha256"]) == 64
+    assert len(lockfile_new["packages"]["packageA"]["sha256"]) == 64
 
-    assert repodata_new["packages"]["packageC"] == {
+    assert lockfile_new["packages"]["packageC"] == {
         "version": "1.0",
         "file_name": "some-path.tar",
         "checksum": "123",

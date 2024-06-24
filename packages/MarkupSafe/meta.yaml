@@ -1,11 +1,11 @@
 package:
   name: MarkupSafe
-  version: 2.1.2
+  version: 2.1.5
   top-level:
     - markupsafe
 source:
-  sha256: abcabc8c2b26036d62d4c746381a6f7cf60aafcc653198ad678306986b09450d
-  url: https://files.pythonhosted.org/packages/95/7e/68018b70268fb4a2a605e2be44ab7b4dd7ce7808adae6c5ef32e34f4b55a/MarkupSafe-2.1.2.tar.gz
+  sha256: d283d37a890ba4c1ae73ffadf8046435c76e7bc2247bbb63c00bd1a709c6544b
+  url: https://files.pythonhosted.org/packages/87/5b/aae44c6655f3801e81aa3eef09dbbf012431987ba564d7231722f68df02d/MarkupSafe-2.1.5.tar.gz
 about:
   home: https://palletsprojects.com/p/markupsafe/
   PyPI: https://pypi.org/project/MarkupSafe
