@@ -100,8 +100,7 @@ src/core/libpyodide.a: \
 	src/core/jslib_asm.o \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o \
-	src/core/pyversion.o \
-	src/core/stack_switching/pystate.o
+	src/core/pyversion.o
 	emar rcs src/core/libpyodide.a $(filter %.o,$^)
 
 
@@ -220,7 +219,7 @@ $(eval $(call preprocess-js,js2python.js))
 
 pyodide_build:
 	@echo "Ensuring editable pyodide-build is installed"
-	./tools/check_editable_pyodide_build.py || $(HOSTPYTHON) -m pip install -e ./pyodide-build
+	./tools/check_editable_pyodide_build.py || python3.12 -m pip install -e ./pyodide-build
 	@which pyodide >/dev/null
 
 

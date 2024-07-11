@@ -105,7 +105,8 @@ _python2js_long(PyObject* x)
                                             (unsigned char*)digits,
                                             4 * ndigits,
                                             true /* little endian */,
-                                            true /* signed */));
+                                            true /* signed */,
+                                            true /* with_exceptions */));
       return JsvNum_fromDigits(digits, ndigits);
     }
   }
@@ -890,4 +891,14 @@ python2js_init(PyObject* core)
 finally:
   Py_CLEAR(docstring_source);
   return success ? 0 : -1;
+}
+
+
+PyObject *
+_PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg)
+{
+    PyObject *args[2] = {self, arg};
+    size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    assert(arg != NULL);
+    return _PyObject_VectorcallMethodId(name, args, nargsf, _Py_NULL);
 }

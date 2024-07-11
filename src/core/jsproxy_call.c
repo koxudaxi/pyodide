@@ -7,6 +7,7 @@
 #include "pyproxy.h"
 #include "python2js.h"
 #include "stddef.h"
+#include "missing_python.h"
 
 Js_static_string(PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL,
                  "This borrowed proxy was automatically destroyed at the "

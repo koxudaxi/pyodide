@@ -23,6 +23,9 @@ set_method_docstring(PyMethodDef* method, PyObject* parent)
     FAIL();
   }
 
+  PyObject*
+  _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg);
+
   py_result = _PyObject_CallMethodIdOneArg(
     py_docstring_mod, &PyId_get_cmeth_docstring, py_method);
   FAIL_IF_NULL(py_result);

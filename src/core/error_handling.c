@@ -9,6 +9,9 @@
 #include <emscripten.h>
 #include <stdio.h>
 
+PyObject*
+_PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg);
+
 static PyObject* tbmod = NULL;
 static PyObject* _pyodide_importhook = NULL;
 

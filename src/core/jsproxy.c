@@ -44,6 +44,8 @@
 
 #include "structmember.h"
 
+Py_hash_t _Py_HashBytes(const void*, Py_ssize_t);
+
 // clang-format off
 #define IS_ITERABLE        (1 << 0)
 #define IS_ITERATOR        (1 << 1)

@@ -17,6 +17,7 @@ LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
 HIWIREBUILD=$(ROOT)/build/hiwire
 HIWIREREPO=https://github.com/hoodmane/hiwire
 HIWIRE_COMMIT=49f3450e34f3f50d4b8296e782dc321bb2e3264e
+HOSTPYTHON=python3.14
 
 ifdef CPYTHON_DEBUG
 	MAYBE_WITH_PYDEBUG=--with-pydebug
@@ -82,8 +83,8 @@ $(PYTARBALL):
 
 prepare-source: $(PYBUILD)/.patched
 
-$(PYBUILD)/.patched: $(PYTARBALL)
-	[ -d $(PYBUILD) ] || (mkdir -p $(dir $(PYBUILD)); tar -C $(dir $(PYBUILD)) -xf $(PYTARBALL))
+$(PYBUILD)/.patched:
+	[ -d $(PYBUILD) ] || (mkdir -p $(dir $(PYBUILD)); cp -r downloads/Python-3.14.0a0 $(PYBUILD))
 	cat patches/*.patch | (cd $(PYBUILD) ; patch -p1)
 	touch $@
 
