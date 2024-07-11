@@ -10,6 +10,8 @@ PYINSTALL=$(CPYTHONINSTALL)
 PYTARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 PYLIB=libpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS).a
 
+GITREPO=$(ROOT)/downloads/Python-$(PYVERSION)
+
 FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/libffi/libffi
 LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
@@ -83,9 +85,14 @@ $(PYTARBALL):
 
 prepare-source: $(PYBUILD)/.patched
 
-$(PYBUILD)/.patched:
-	[ -d $(PYBUILD) ] || (mkdir -p $(dir $(PYBUILD)); cp -r downloads/Python-3.14.0a0 $(PYBUILD))
-	cat patches/*.patch | (cd $(PYBUILD) ; patch -p1)
+$(GITREPO):
+	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
+	(cd $(ROOT)/downloads && git clone -b tag-strings-rebased --depth 1  https://github.com/lysnikolaou/cpython.git Python-$(PYVERSION))
+
+$(PYBUILD)/.patched: $(GITREPO)
+	[ -d $(PYBUILD) ] || mkdir -p $(dir $(PYBUILD))
+	cp -frp $(GITREPO) $(PYBUILD)
+	cat patches/*.patch | (cd $(PYBUILD) ; patch -p1 || echo error)
 	touch $@
 
 $(PYINSTALL)/lib/libffi.a :
