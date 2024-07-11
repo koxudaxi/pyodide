@@ -13,7 +13,6 @@ all: \
 	dist/pyodide-lock.json \
 	dist/console.html \
 	dist/pyodide.d.ts \
-	dist/snapshot.bin \
 
 
 all-but-packages: \
