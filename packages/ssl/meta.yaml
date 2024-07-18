@@ -7,8 +7,7 @@ package:
     - ssl
     - _ssl
 source:
-  sha256: $(PYTHON_ARCHIVE_SHA256)
-  url: $(PYTHON_ARCHIVE_URL)
+  path: ../../cpython/build/Python-3.14.0a0
 build:
   type: cpython_module
   script: |
