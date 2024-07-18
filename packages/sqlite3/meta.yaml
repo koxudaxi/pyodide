@@ -11,6 +11,8 @@ source:
 build:
   type: cpython_module
   script: |
+
+    sed -i 's/assert _sre.MAGIC == MAGIC, "SRE module mismatch"//' Lib/re/_compiler.py
     export FILES=(
       "Modules/_sqlite/blob.c"
       "Modules/_sqlite/connection.c"
