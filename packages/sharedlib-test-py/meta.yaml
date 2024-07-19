@@ -2,7 +2,7 @@ package:
   name: sharedlib-test-py
   version: "1.0"
   tag:
-    - core
+#    - core
     - pyodide.test
   top-level:
     - sharedlib_test
