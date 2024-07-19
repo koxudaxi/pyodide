@@ -87,25 +87,25 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            /builder/python
+            /tmp/builder/python
           key: ${{ steps.get_commit_hash.outputs.commit_hash }}-${{ runner.os }}-v20240719-
 
       - name: Build builder python
         if: steps.cache-builder.outputs.cache-hit != 'true'
         shell: bash -l {0}
         run: |
-          BUILD_DIR=/builder/${{ steps.get_commit_hash.outputs.commit_hash }}
+          BUILD_DIR=/tmp/builder/${{ steps.get_commit_hash.outputs.commit_hash }}
           mkdir -p "$BUILD_DIR"
           cd "$BUILD_DIR"
           git init
           git remote add origin https://github.com/lysnikolaou/cpython.git
           git fetch --depth 1 origin ${{ steps.get_commit_hash.outputs.commit_hash }}
           git checkout FETCH_HEAD
-          ./configure --prefix=/builder/python && make -j3 && make install
+          ./configure --prefix=/tmp/builder/python && make -j3 && make install
       - name: Add builder python to PATH
         shell: bash
         run: |
-          echo "/builder/python/bin" >> $GITHUB_PATH
+          echo "/tmp/builder/python/bin" >> $GITHUB_PATH
       - name: Check Versions
         shell: bash -l {0}
         run: |
