@@ -52,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-14]
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     env:
       EMSDK_NUM_CORES: 3
@@ -69,13 +69,52 @@ jobs:
           path: |
             /tmp/ccache
           key: ${{ hashFiles('Makefile.envs') }}-${{ runner.os }}-v20211025-
-
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: pyodide-env
           environment-file: environment.yml
           channels: conda-forge
 
+      - name: Get the latest commit hash
+        id: get_commit_hash
+        run: |
+          COMMIT_HASH=$(git ls-remote https://github.com/lysnikolaou/cpython.git refs/heads/tag-strings-rebased | awk '{print $1}')
+          SHORT_COMMIT_HASH=$(echo $COMMIT_HASH | cut -c 1-7)
+          echo "::set-output name=commit_hash::$COMMIT_HASH"
+          echo "::set-output name=short_commit_hash::$SHORT_COMMIT_HASH"
+      - name: Cache builder Python
+        id: cache-builder
+        uses: actions/cache@v4
+        with:
+          path: |
+            /builder/python
+          key: ${{ steps.get_commit_hash.outputs.commit_hash }}-${{ runner.os }}-v20240719-
+
+      - name: Build builder python
+        if: steps.cache-builder.outputs.cache-hit != 'true'
+        shell: bash -l {0}
+        run: |
+          BUILD_DIR=/builder/${{ steps.get_commit_hash.outputs.commit_hash }}
+          mkdir -p "$BUILD_DIR"
+          cd "$BUILD_DIR"
+          git init
+          git remote add origin https://github.com/lysnikolaou/cpython.git
+          git fetch --depth 1 origin ${{ steps.get_commit_hash.outputs.commit_hash }}
+          git checkout FETCH_HEAD
+          ./configure --prefix=/builder/python && make -j3 && make install
+      - name: Add builder python to PATH
+        shell: bash
+        run: |
+          echo "/builder/python/bin" >> $GITHUB_PATH
+      - name: Check Versions
+        shell: bash -l {0}
+        run: |
+          python --version
+          node --version
+          npm --version
+          which python
+          which node
+          which npm
       - name: Check Versions
         shell: bash -l {0}
         run: |
