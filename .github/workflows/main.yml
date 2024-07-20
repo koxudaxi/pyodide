@@ -127,8 +127,7 @@ jobs:
       - name: Install dependencies (node)
         shell: bash -l {0}
         run: |
-          ls -l pyodide/node_modules/.bin || true
-          npm install -g dts-bundle-generator
+          cd src/js && npm install
 
       - name: Build emsdk
         shell: bash -l {0}
