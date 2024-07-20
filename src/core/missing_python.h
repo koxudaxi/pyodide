@@ -2,24 +2,24 @@
 #define MISSING_PYTHON_H
 
 #include "Python.h"
+//
+//typedef struct {
+//    uint8_t v;
+//} _PyOnceFlag;
 
-typedef struct {
-    uint8_t v;
-} _PyOnceFlag;
-
-typedef struct _PyArg_Parser {
-    const char *format;
-    const char * const *keywords;
-    const char *fname;
-    const char *custom_msg;
-    _PyOnceFlag once;       /* atomic one-time initialization flag */
-    int is_kwtuple_owned;   /* does this parser own the kwtuple object? */
-    int pos;                /* number of positional-only arguments */
-    int min;                /* minimal number of arguments */
-    int max;                /* maximal number of positional arguments */
-    PyObject *kwtuple;      /* tuple of keyword parameter names */
-    struct _PyArg_Parser *next;
-} _PyArg_Parser;
+//typedef struct _PyArg_Parser {
+//    const char *format;
+//    const char * const *keywords;
+//    const char *fname;
+//    const char *custom_msg;
+//    _PyOnceFlag once;       /* atomic one-time initialization flag */
+//    int is_kwtuple_owned;   /* does this parser own the kwtuple object? */
+//    int pos;                /* number of positional-only arguments */
+//    int min;                /* minimal number of arguments */
+//    int max;                /* maximal number of positional arguments */
+//    PyObject *kwtuple;      /* tuple of keyword parameter names */
+//    struct _PyArg_Parser *next;
+//} _PyArg_Parser;
 
 PyAPI_FUNC(int) _PySet_Update(PyObject *set, PyObject *iterable);
 PyAPI_FUNC(PyObject*) _PyList_Extend(PyListObject *self, PyObject *iterable);
