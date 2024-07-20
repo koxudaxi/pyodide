@@ -23,9 +23,16 @@
 
 PyAPI_FUNC(int) _PySet_Update(PyObject *set, PyObject *iterable);
 PyAPI_FUNC(PyObject*) _PyList_Extend(PyListObject *self, PyObject *iterable);
-extern int _PyObject_SetAttrId(PyObject *, _Py_Identifier *, PyObject *);
-
-
+static inline int
+_PyObject_SetAttrId(PyObject *v, _Py_Identifier *name, PyObject *w)
+{
+    int result;
+    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
+    if (!oname)
+        return -1;
+    result = PyObject_SetAttr(v, oname, w);
+    return result;
+}
 
 extern PyObject* _PyObject_CallMethodIdObjArgs(
     PyObject *obj,

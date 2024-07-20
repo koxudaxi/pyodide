@@ -218,6 +218,8 @@ EXPORTS=_main \
    ,__PyTraceback_Add \
    ,_PyUnicode_Data \
    ,_PyUnicode_New \
+   ,___stack_chk_fail \
+   ,__stack_chk_guard \
 
 
 ifeq ($(DISABLE_DYLINK), 1)
