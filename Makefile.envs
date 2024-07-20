@@ -150,6 +150,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s AUTO_NATIVE_LIBRARIES=0 \
 	-s NODEJS_CATCH_EXIT=0 \
 	-s NODEJS_CATCH_REJECTION=0 \
+	-s ERROR_ON_UNDEFINED_SYMBOLS=0 \
 	-s EXPORTED_FUNCTIONS='$(EXPORTS)'\
 	\
 	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
@@ -218,8 +219,6 @@ EXPORTS=_main \
    ,__PyTraceback_Add \
    ,_PyUnicode_Data \
    ,_PyUnicode_New \
-   ,___stack_chk_fail \
-   ,__stack_chk_guard \
 
 
 ifeq ($(DISABLE_DYLINK), 1)
