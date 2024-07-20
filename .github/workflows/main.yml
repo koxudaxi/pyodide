@@ -124,6 +124,12 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      - name: Install dependencies (node)
+        shell: bash -l {0}
+        run: |
+          ls -l pyodide/node_modules/.bin || true
+          npm install -g dts-bundle-generator
+
       - name: Build emsdk
         shell: bash -l {0}
         run: |
