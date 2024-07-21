@@ -3,7 +3,9 @@ name: main
 on:
   push:
   pull_request:
-
+  schedule:
+    # Build and push Docker images every 3 hours
+    - cron:  '0 */3 * * *'
 concurrency:
   group: main-${{ github.head_ref }}
   cancel-in-progress: true
@@ -36,7 +38,7 @@ jobs:
           fi
   build-core:
     needs: get_latest_commit_hash
-    #if: needs.get_latest_commit_hash.outputs.check_release == 'false'
+    if: needs.get_latest_commit_hash.outputs.check_release == 'false' || github.event_name != 'schedule
     strategy:
       fail-fast: false
       matrix:
@@ -164,6 +166,7 @@ jobs:
 
       - name: Store artifacts build
         uses: actions/upload-artifact@v4
+        if: needs.get_latest_commit_hash.outputs.check_release == 'false'
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
@@ -174,6 +177,7 @@ jobs:
           tar -czf dist.tar.gz dist/
       - name: Release
         uses: softprops/action-gh-release@v2
+        if: needs.get_latest_commit_hash.outputs.check_release == 'false'
         with:
           files: dist.tar.gz
           tag_name: ${{ needs.get_latest_commit_hash.outputs.short_commit_hash }}
@@ -183,12 +187,13 @@ jobs:
           echo "${{ needs.get_latest_commit_hash.outputs.commit_hash }}" > dist/commit_hash.txt
           echo "${{ needs.get_latest_commit_hash.outputs.short_commit_hash }}" > dist/short_commit_hash.txt
       - name: Upload artifact
+        if: needs.get_latest_commit_hash.outputs.check_release == 'false'
         uses: actions/upload-pages-artifact@v1
         with:
           path: ./dist
   deploy:
     needs: build-core
-#    if: needs.get_latest_commit_hash.outputs.check_release == 'false'
+    if: needs.get_latest_commit_hash.outputs.check_release == 'false'
     permissions:
       pages: write
       id-token: write
