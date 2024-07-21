@@ -1,0 +1,46 @@
+From ca3a6da6fefe3dd7dd805f51f906a2b5b5b91762 Mon Sep 17 00:00:00 2001
+From: Sam Clegg <sbc@chromium.org>
+Date: Fri, 12 Jul 2024 11:02:28 -0700
+Subject: [PATCH] Add support for -fstack-protector
+
+Fixes: #9780
+---
+ system/lib/libc/musl/src/env/__stack_chk_fail.c |  5 +++++
+ test/core/test_dlfcn_self.exports               |  1 +
+ test/other/test_stack_protector.c               | 14 ++++++++++++++
+ test/other/test_stack_protector.out             |  2 ++
+ test/test_other.py                              |  3 +++
+ tools/system_libs.py                            |  2 +-
+ 6 files changed, 26 insertions(+), 1 deletion(-)
+ create mode 100644 test/other/test_stack_protector.c
+ create mode 100644 test/other/test_stack_protector.out
+
+diff --git a/system/lib/libc/musl/src/env/__stack_chk_fail.c b/system/lib/libc/musl/src/env/__stack_chk_fail.c
+index e53526020f75..94d8e1d4c960 100644
+--- a/system/lib/libc/musl/src/env/__stack_chk_fail.c
++++ b/system/lib/libc/musl/src/env/__stack_chk_fail.c
+@@ -23,6 +23,11 @@ void __init_ssp(void *entropy)
+ 
+ void __stack_chk_fail(void)
+ {
++#if defined(__EMSCRIPTEN__) && !defined(NDEBUG)
++	// Report the reason for the crash, at least in debug builds.
++	// This is the same message that glibc outputs (even in release builds).
++	emscripten_err("*** stack smashing detected ***");
++#endif
+ 	a_crash();
+ }
+ 
+diff --git a/tools/system_libs.py b/tools/system_libs.py
+index ba9e3b36135b..28439c4238dc 100644
+--- a/tools/system_libs.py
++++ b/tools/system_libs.py
+@@ -1103,7 +1103,7 @@ def get_files(self):
+         'fork.c', 'vfork.c', 'posix_spawn.c', 'posix_spawnp.c', 'execve.c', 'waitid.c', 'system.c',
+         '_Fork.c',
+         # 'env' exclusion
+-        '__reset_tls.c', '__init_tls.c', '__libc_start_main.c', '__stack_chk_fail.c',
++        '__reset_tls.c', '__init_tls.c', '__libc_start_main.c',
+     ]
+ 
+     ignore += LIBC_SOCKETS
