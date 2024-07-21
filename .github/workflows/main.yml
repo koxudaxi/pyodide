@@ -38,7 +38,7 @@ jobs:
           fi
   build-core:
     needs: get_latest_commit_hash
-    if: needs.get_latest_commit_hash.outputs.check_release == 'false' || github.event_name != 'schedule
+    if: needs.get_latest_commit_hash.outputs.check_release == 'false' || github.event_name != 'schedule'
     strategy:
       fail-fast: false
       matrix:
