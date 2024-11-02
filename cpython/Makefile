@@ -89,7 +89,7 @@ prepare-source: $(PYBUILD)/.patched
 
 $(GITREPO):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
-	(cd $(ROOT)/downloads && git clone -b tstrings --depth 2000  https://github.com/lysnikolaou/cpython.git Python-$(PYVERSION) && cd Python-$(PYVERSION) && git checkout 97248204a1cc10bd3a66ce857535d133f6bc86a1)
+	(cd $(ROOT)/downloads && git clone -b tstrings --depth 1  https://github.com/lysnikolaou/cpython.git Python-$(PYVERSION))
 
 $(PYBUILD)/.patched: $(GITREPO)
 	[ -d $(PYBUILD) ] || mkdir -p $(dir $(PYBUILD))
