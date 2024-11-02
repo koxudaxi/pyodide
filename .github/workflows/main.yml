@@ -21,7 +21,7 @@ jobs:
       - name: Get the latest commit hash
         id: get_commit_hash
         run: |
-          COMMIT_HASH=$(git ls-remote https://github.com/lysnikolaou/cpython.git refs/heads/tag-strings-rebased | awk '{print $1}')
+          COMMIT_HASH=$(git ls-remote https://github.com/lysnikolaou/cpython.git refs/heads/tstrings | awk '{print $1}')
           SHORT_COMMIT_HASH=$(echo $COMMIT_HASH | cut -c 1-7)
           echo "::set-output name=commit_hash::$COMMIT_HASH"
           echo "::set-output name=short_commit_hash::$SHORT_COMMIT_HASH"
