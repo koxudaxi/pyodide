@@ -6,6 +6,8 @@ on:
   schedule:
     # Build and push Docker images every 3 hours
     - cron:  '0 */3 * * *'
+  # allow manual trigger
+  workflow_dispatch:
 concurrency:
   group: main-${{ github.head_ref }}
   cancel-in-progress: true
@@ -191,19 +193,3 @@ jobs:
         uses: actions/upload-pages-artifact@v1
         with:
           path: ./dist
-  deploy:
-    needs: build-core
-    if: needs.get_latest_commit_hash.outputs.check_release == 'false'
-    permissions:
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v1
