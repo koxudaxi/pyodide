@@ -55,6 +55,8 @@ $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched
 	emmake make -C $(PYBUILD) PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
 	cp $(PYBUILD)/$(PYLIB) $(PYINSTALL)/lib/
 
+	cp $(PYBUILD)/Modules/_hacl/libHacl_Hash_Blake2.a $(PYINSTALL)/lib/
+
 
 .PHONY=rebuild
 rebuild: sysconfigdata
@@ -87,7 +89,7 @@ prepare-source: $(PYBUILD)/.patched
 
 $(GITREPO):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
-	(cd $(ROOT)/downloads && git clone -b tag-strings-rebased --depth 1  https://github.com/lysnikolaou/cpython.git Python-$(PYVERSION))
+	(cd $(ROOT)/downloads && git clone -b tstrings --depth 2000  https://github.com/lysnikolaou/cpython.git Python-$(PYVERSION) && cd Python-$(PYVERSION) && git checkout 97248204a1cc10bd3a66ce857535d133f6bc86a1)
 
 $(PYBUILD)/.patched: $(GITREPO)
 	[ -d $(PYBUILD) ] || mkdir -p $(dir $(PYBUILD))
@@ -147,6 +149,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 			  --disable-ipv6 \
 			  --enable-big-digits=30 \
 			  --enable-optimizations \
+			  ax_cv_c_float_words_bigendian=no \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(PYBUILD)/config.guess) \
 			  --prefix=$(PYINSTALL)  \

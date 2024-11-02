@@ -1,4 +1,4 @@
-export PYVERSION ?= 3.14.0a0
+export PYVERSION ?= 3.14.0a1
 export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.58
 export PYODIDE_VERSION ?= 0.27.0.dev0
 export PYODIDE_ABI_VERSION ?= 2024_0
@@ -162,6 +162,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lwebsocket.js \
 	-leventloop.js \
 	-lhiwire \
+    -lHacl_Hash_Blake2 \
 	\
 	-lGL \
 	-legl.js \
@@ -238,6 +239,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 		-lffi \
 		-lhiwire \
+		-lHacl_Hash_Blake2 \
 		-lidbfs.js \
 		-lnodefs.js \
 

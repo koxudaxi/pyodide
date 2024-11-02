@@ -81,7 +81,7 @@ _PyObject_CallMethodIdNoArgs(PyObject *self, _Py_Identifier *name)
 PyObject *
 _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg);
 
-extern int _PyUnicode_EQ(PyObject *, PyObject *);
+PyAPI_FUNC(int) _PyUnicode_Equal(PyObject *, PyObject *);
 extern PyObject* _PyObject_NextNotImplemented(PyObject *);
 PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
 

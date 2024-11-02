@@ -7,7 +7,7 @@ package:
     - lzma
     - _lzma
 source:
-  path: ../../cpython/build/Python-3.14.0a0
+  path: ../../cpython/build/Python-3.14.0a1
 build:
   type: cpython_module
   script: |
