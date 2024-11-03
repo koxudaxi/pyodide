@@ -216,11 +216,6 @@ jobs:
           name: dist-files
           path: ./dist_temp
 
-      - name: Reorganize directory structure
-        run: |
-          mkdir -p dist_new/
-          mv dist_temp/* dist_new/
-
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
