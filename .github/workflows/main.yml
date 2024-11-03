@@ -194,7 +194,7 @@ jobs:
       - name: Prepare directory structure
         run: |
           mkdir -p "dist_new/tstrings"
-          cp -r dist/* "dist_new/"
+          cp -r dist/* "dist_new/tstrings/"
 
       - name: Upload pages artifacts
         uses: actions/upload-artifact@v4
