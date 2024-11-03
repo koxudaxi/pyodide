@@ -38,6 +38,7 @@ jobs:
             echo "Release does not exist on GitHub."
             echo "::set-output name=exists::false"
           fi
+
   build-core:
     needs: get_latest_commit_hash
     if: needs.get_latest_commit_hash.outputs.check_release == 'false' || github.event_name != 'schedule'
@@ -73,7 +74,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            /tmp/builder/python
+            ~/Publish_build
+            .build
           key: ${{ needs.get_latest_commit_hash.outputs.commit_hash }}-${{ runner.os }}-v20240719-
 
       - name: Build builder python
@@ -132,7 +134,7 @@ jobs:
         shell: bash -l {0}
         run: |
           which ccache
-
+          
           ccache -z
           make -C emsdk
           ccache -s
@@ -142,9 +144,9 @@ jobs:
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
-
+          
           which ccache
-
+          
           ccache -z
           make -C cpython
           ccache -s
@@ -162,7 +164,7 @@ jobs:
         shell: bash -l {0}
         run: |
           ls -lh dist/
-
+          
           pip install brotli
           ./tools/check_compressed_size.py dist/pyodide.asm.* dist/python_stdlib*
 
@@ -188,8 +190,49 @@ jobs:
         run: |
           echo "${{ needs.get_latest_commit_hash.outputs.commit_hash }}" > dist/commit_hash.txt
           echo "${{ needs.get_latest_commit_hash.outputs.short_commit_hash }}" > dist/short_commit_hash.txt
-      - name: Upload artifact
-        if: needs.get_latest_commit_hash.outputs.check_release == 'false'
-        uses: actions/upload-pages-artifact@v1
+
+      - name: Prepare directory structure
+        run: |
+          COMMIT_HASH="${{ needs.get_latest_commit_hash.outputs.commit_hash }}"
+          mkdir -p "dist_new/tstrings"
+          cp -r dist/* "dist_new/tstrings/"
+
+      - name: Upload pages artifacts
+        uses: actions/upload-artifact@v4
         with:
-          path: ./dist
+          name: dist-files
+          path: ./dist_new
+          retention-days: 1
+
+  deploy:
+    needs: [build-core, get_latest_commit_hash]
+    if: needs.get_latest_commit_hash.outputs.check_release == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 1
+
+      - name: Remove existing directory
+        run: |
+  
+          if [ -d "tstrings" ]; then
+            rm -rf tstrings
+          fi
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-files
+          path: ./dist_new
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist_new
+          keep_files: true
+          enable_jekyll: false
+          commit_message: 'deploy: ${{ needs.get_latest_commit_hash.outputs.commit_hash }}'
