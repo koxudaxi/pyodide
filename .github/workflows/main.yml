@@ -205,28 +205,22 @@ jobs:
           retention-days: 1
 
   deploy:
-    needs: [build-core, get_latest_commit_hash]
+    needs: [ build-core, get_latest_commit_hash ]
     if: needs.get_latest_commit_hash.outputs.check_release == 'false'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          fetch-depth: 1
-
-      - name: Remove existing directory
-        run: |
-  
-          if [ -d "tstrings" ]; then
-            rm -rf tstrings
-          fi
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: dist-files
-          path: ./dist_new
+          path: ./dist_temp
+
+      - name: Reorganize directory structure
+        run: |
+          mkdir -p dist_new
+          mv dist_temp/*/* dist_new/tstrings/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
