@@ -193,7 +193,6 @@ jobs:
 
       - name: Prepare directory structure
         run: |
-          COMMIT_HASH="${{ needs.get_latest_commit_hash.outputs.commit_hash }}"
           mkdir -p "dist_new/tstrings"
           cp -r dist/* "dist_new/tstrings/"
 
@@ -219,8 +218,8 @@ jobs:
 
       - name: Reorganize directory structure
         run: |
-          mkdir -p dist_new
-          mv dist_temp/*/* dist_new/tstrings/
+          mkdir -p dist_new/tstrings
+          mv dist_temp/* dist_new/tstrings/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
