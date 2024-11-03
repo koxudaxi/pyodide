@@ -216,16 +216,11 @@ jobs:
           name: dist-files
           path: ./dist_temp
 
-      - name: Reorganize directory structure
-        run: |
-          mkdir -p dist_new/tstrings
-          mv dist_temp/* dist_new/
-
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist_new
+          publish_dir: ./dist_temp
           keep_files: true
           enable_jekyll: false
           commit_message: 'deploy: ${{ needs.get_latest_commit_hash.outputs.commit_hash }}'
