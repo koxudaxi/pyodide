@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   get_latest_commit_hash:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     outputs:
       commit_hash: ${{ steps.get_commit_hash.outputs.commit_hash }}
       short_commit_hash: ${{ steps.get_commit_hash.outputs.short_commit_hash }}
@@ -45,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-20.04]
     runs-on: ${{ matrix.os }}
     env:
       EMSDK_NUM_CORES: 3
@@ -130,6 +130,27 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      - name: Install cmake
+        shell: bash -l {0}
+        run: |
+         # Download and install CMake 3.4.3
+         CMAKE_VERSION="3.4.3" # Use version < 3.5
+         CMAKE_TAR="cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz"
+         CMAKE_URL="https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_TAR}"
+
+         echo "Downloading CMake ${CMAKE_VERSION} from ${CMAKE_URL}"
+         wget --quiet ${CMAKE_URL} -O /tmp/${CMAKE_TAR}
+
+         echo "Extracting CMake to /usr/share/miniconda/envs/pyodide-env"
+         sudo tar -xzf /tmp/${CMAKE_TAR} --strip-components=1 -C /usr/share/miniconda/envs/pyodide-env
+
+         echo "Cleaning up downloaded file"
+         rm /tmp/${CMAKE_TAR}
+
+         # Verify CMake version and path *** IMPORTANT ***
+         echo "Verifying CMake installation:"
+         which cmake || echo "cmake not found in PATH"
+         cmake --version || echo "cmake command failed"
       - name: Build emsdk
         shell: bash -l {0}
         run: |
@@ -206,7 +227,7 @@ jobs:
   deploy:
     needs: [ build-core, get_latest_commit_hash ]
     if: needs.get_latest_commit_hash.outputs.check_release == 'false'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     permissions:
       contents: write
     steps:
