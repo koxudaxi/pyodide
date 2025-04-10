@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   get_latest_commit_hash:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       commit_hash: ${{ steps.get_commit_hash.outputs.commit_hash }}
       short_commit_hash: ${{ steps.get_commit_hash.outputs.short_commit_hash }}
@@ -45,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04]
     runs-on: ${{ matrix.os }}
     env:
       EMSDK_NUM_CORES: 3
