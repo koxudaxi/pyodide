@@ -173,15 +173,22 @@ jobs:
           ccache -z
           
           PY_VER=3.14.0a1
-          PY_BUILD_DIR="$PWD/cpython/build/Python-${PY_VER}"
-          STUB_DIR="$PY_BUILD_DIR/build/lib.linux-x86_64-3.14"
+          PY_BUILD_ROOT="$PWD/cpython/build/Python-${PY_VER}"
 
-          mkdir -p "$STUB_DIR"
-          echo '{}' > "$STUB_DIR/build-details.json"
-          echo "Stub build‑details.json created at $STUB_DIR"
-          
-          make -C cpython
+          emmake make -C "$PY_BUILD_ROOT" regen-frozen -j${EMSDK_NUM_CORES:-3}
+
+          PY_SUBDIR=$(cat "$PY_BUILD_ROOT/pybuilddir.txt")
+          TARGET_JSON="$PY_BUILD_ROOT/${PY_SUBDIR}/build-details.json"
+
+          mkdir -p "$(dirname "$TARGET_JSON")"
+          if [[ ! -f "$TARGET_JSON" ]]; then
+            echo '{}' > "$TARGET_JSON"
+            echo "★ stub build-details.json placed at $TARGET_JSON"
+          fi
+
+          emmake make -C "$PY_BUILD_ROOT" -j${EMSDK_NUM_CORES:-3}
           ccache -s
+
 
       - name: build Pyodide core
         shell: bash -l {0}
