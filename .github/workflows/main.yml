@@ -115,7 +115,7 @@ jobs:
 
       - name: Install dependencies (ubuntu)
         shell: bash -l {0}
-        if: ${{ contains(runner.os, 'ubuntu') }}
+        #if: ${{ contains(runner.os, 'ubuntu') }}
         run: |
           sudo apt install -y build-essential git xxd libidn11-dev
 
