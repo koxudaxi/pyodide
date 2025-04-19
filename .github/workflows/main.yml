@@ -175,7 +175,7 @@ jobs:
           PY_VER=3.14.0a1
           PY_BUILD_DIR="$PWD/cpython/build/Python-${PY_VER}"
           
-          make -C cpython python-build
+          make -C cpython build-details.json
           
           LIBDIR="$(cat "$PY_BUILD_DIR/pybuilddir.txt")"
 
