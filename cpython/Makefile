@@ -93,7 +93,7 @@ $(GITREPO):
 
 $(PYBUILD)/.patched: $(GITREPO)
 	[ -d $(PYBUILD) ] || mkdir -p $(dir $(PYBUILD))
-	cp -frp $(GITREPO) $(PYBUILD)
+	cp -frp $(GITREPO)/. $(PYBUILD)
 	cat patches/*.patch | (cd $(PYBUILD) ; patch -p1 || echo error)
 	touch $@
 
