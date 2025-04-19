@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   get_latest_commit_hash:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       commit_hash: ${{ steps.get_commit_hash.outputs.commit_hash }}
       short_commit_hash: ${{ steps.get_commit_hash.outputs.short_commit_hash }}
@@ -45,7 +45,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-22.04]
     runs-on: ${{ matrix.os }}
     env:
       EMSDK_NUM_CORES: 3
@@ -227,7 +227,7 @@ jobs:
   deploy:
     needs: [ build-core, get_latest_commit_hash ]
     if: needs.get_latest_commit_hash.outputs.check_release == 'false'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     permissions:
       contents: write
     steps:
