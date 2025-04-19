@@ -117,7 +117,9 @@ jobs:
         shell: bash -l {0}
         #if: ${{ contains(runner.os, 'ubuntu') }}
         run: |
-          sudo apt install -y build-essential git xxd libidn11-dev
+          sudo apt install -y build-essential git xxd
+          wget http://mirrors.kernel.org/ubuntu/pool/main/libi/libidn/libidn11_1.33-2.2ubuntu2_amd64.deb
+          sudo apt install ./libidn11_1.33-2.2ubuntu2_amd64.deb
 
       - name: Install dependencies (macos)
         shell: bash -l {0}
