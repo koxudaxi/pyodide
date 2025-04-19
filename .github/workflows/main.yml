@@ -171,6 +171,18 @@ jobs:
           which ccache
           
           ccache -z
+          
+          PY_VER=3.14.0a1
+          PY_BUILD_DIR="$PWD/cpython/build/Python-${PY_VER}"
+          
+          make -C cpython python-build
+          
+          LIBDIR="$(cat "$PY_BUILD_DIR/pybuilddir.txt")"
+
+          echo "Generating build‑details.json into ${LIBDIR} ..."
+          python3.14 "$PY_BUILD_DIR/Tools/build/generate-build-details.py" \
+                     "$PY_BUILD_DIR/${LIBDIR}/build-details.json"
+          
           make -C cpython
           ccache -s
 
