@@ -167,26 +167,23 @@ jobs:
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
-          
           which ccache
-          
           ccache -z
           
           PY_VER=3.14.0a1
-          PY_BUILD_ROOT="$PWD/cpython/build/Python-${PY_VER}"
-
-          emmake make -C "$PY_BUILD_ROOT" regen-frozen -j${EMSDK_NUM_CORES:-3}
-
+          PY_SRC_MK_DIR="$PWD/cpython"
+          PY_BUILD_ROOT="$PY_SRC_MK_DIR/build/Python-${PY_VER}"
+          
+          emmake make -C "$PY_SRC_MK_DIR" python-makefile -j${EMSDK_NUM_CORES:-3}
+          
           PY_SUBDIR=$(cat "$PY_BUILD_ROOT/pybuilddir.txt")
           TARGET_JSON="$PY_BUILD_ROOT/${PY_SUBDIR}/build-details.json"
-
+          
           mkdir -p "$(dirname "$TARGET_JSON")"
-          if [[ ! -f "$TARGET_JSON" ]]; then
-            echo '{}' > "$TARGET_JSON"
-            echo "★ stub build-details.json placed at $TARGET_JSON"
-          fi
-
-          emmake make -C "$PY_BUILD_ROOT" -j${EMSDK_NUM_CORES:-3}
+          [[ -f "$TARGET_JSON" ]] || echo '{}' > "$TARGET_JSON"
+          echo "★ stub build-details.json placed at $TARGET_JSON"
+          
+          emmake make -C "$PY_SRC_MK_DIR" -j${EMSDK_NUM_CORES:-3}
           ccache -s
 
 
