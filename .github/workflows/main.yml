@@ -204,6 +204,8 @@ jobs:
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
+          export CMAKE_SKIP_INSTALL=1
+          pip install -r requirements.txt
           ccache -z
           PYODIDE_PACKAGES="tag:core" make
           ccache -s
