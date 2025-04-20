@@ -167,7 +167,7 @@ $(CPYTHONBUILD)/Modules/_decimal/libmpdec/libmpdec.a \
     $(CPYTHONBUILD)/Modules/expat/libexpat.a \
     $(wildcard $(CPYTHONBUILD)/Modules/_hacl/libHacl_*.a) \
     \
-    -Wl,--allow-duplicate-symbols \
+    -Wl,--allow-multiple-definition \
 	-lGL \
 	-legl.js \
 	-lwebgl.js \
