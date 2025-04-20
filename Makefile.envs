@@ -131,6 +131,11 @@ export LDFLAGS_BASE=\
 
 export CXXFLAGS_BASE=
 
+HACL_DIR := $(CPYTHONBUILD)/Modules/_hacl
+HACL_LIB := $(if $(wildcard $(HACL_DIR)/libHacl_HMAC.a), \
+               $(HACL_DIR)/libHacl_HMAC.a, \
+               $(HACL_DIR)/
+
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s MAIN_MODULE=1 \
 	-s MODULARIZE=1 \
@@ -162,15 +167,9 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lwebsocket.js \
 	-leventloop.js \
 	-lhiwire \
-    \
-    $(CPYTHONBUILD)/Modules/_decimal/libmpdec/libmpdec.a \
-    $(CPYTHONBUILD)/Modules/expat/libexpat.a \
-    \
-    $(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_SHA2.a \
-    $(shell test -f $(CPYTHONBUILD)/Modules/_hacl/libHacl_HMAC.a \
-          && echo $(CPYTHONBUILD)/Modules/_hacl/libHacl_HMAC.a \
-          || echo $(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_Blake2.a) \
-    \
+  $(CPYTHONBUILD)/Modules/_decimal/libmpdec/libmpdec.a \
+  $(CPYTHONBUILD)/Modules/expat/libexpat.a \
+  $(HACL_LIB) \
 	-lGL \
 	-legl.js \
 	-lwebgl.js \
@@ -191,7 +190,7 @@ EXPORTS=_main \
    ,_hiwire_pop \
    ,__hiwire_get \
    ,__hiwire_set \
-   ,__hiwire_immortal_get \
+   ,__hiwir_immortal_get \
    ,__hiwire_immortal_add \
    ,_jslib_init \
    ,_init_pyodide_proxy \
