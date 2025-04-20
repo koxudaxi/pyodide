@@ -130,32 +130,21 @@ jobs:
       - name: Install cmake
         shell: bash -l {0}
         run: |
-         # Download and install CMake 3.4.3
-         CMAKE_VERSION="3.4.3" # Use version < 3.5
-         CMAKE_TAR="cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz"
-         CMAKE_URL="https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_TAR}"
+          CMAKE_VERSION="3.4.3"
+          CMAKE_TAR="cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz"
+          CMAKE_URL="https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_TAR}"
+          wget -q ${CMAKE_URL} -O /tmp/${CMAKE_TAR}
+          sudo tar -xzf /tmp/${CMAKE_TAR} --strip-components=1 -C /usr/share/miniconda/envs/pyodide-env
+          rm /tmp/${CMAKE_TAR}
 
-         echo "Downloading CMake ${CMAKE_VERSION} from ${CMAKE_URL}"
-         wget --quiet ${CMAKE_URL} -O /tmp/${CMAKE_TAR}
-
-         echo "Extracting CMake to /usr/share/miniconda/envs/pyodide-env"
-         sudo tar -xzf /tmp/${CMAKE_TAR} --strip-components=1 -C /usr/share/miniconda/envs/pyodide-env
-
-         echo "Cleaning up downloaded file"
-         rm /tmp/${CMAKE_TAR}
-
-         # Verify CMake version and path *** IMPORTANT ***
-         echo "Verifying CMake installation:"
-         which cmake || echo "cmake not found in PATH"
-         cmake --version || echo "cmake command failed"
-
-      - name: Fix ownership and write‑permission of CMake binaries
+      - name: Fix ownership of env/bin
         shell: bash -l {0}
         run: |
           BIN_DIR=/usr/share/miniconda/envs/pyodide-env/bin
-          sudo chown $(id -u):$(id -g) $BIN_DIR/cmake* $BIN_DIR/ccmake* || true
-          sudo chmod u+w $BIN_DIR/cmake* $BIN_DIR/ccmake* || true
+          sudo chown $(id -u):$(id -g) ${BIN_DIR}/* || true
+          sudo chmod u+w ${BIN_DIR}/* || true
 
+          
       - name: Install dependencies (Python)
         shell: bash -l {0}
         run: |
