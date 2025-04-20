@@ -242,7 +242,6 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 		-lffi \
 		-lhiwire \
-		-lHacl_Hash_Blake2 \
 		-lidbfs.js \
 		-lnodefs.js \
 
