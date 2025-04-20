@@ -134,7 +134,7 @@ export CXXFLAGS_BASE=
 HACL_DIR := $(CPYTHONBUILD)/Modules/_hacl
 HACL_LIB := $(if $(wildcard $(HACL_DIR)/libHacl_HMAC.a), \
                $(HACL_DIR)/libHacl_HMAC.a, \
-               $(HACL_DIR)/
+               $(HACL_DIR)/libHacl_Hash_SHA2.a)
 
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s MAIN_MODULE=1 \
