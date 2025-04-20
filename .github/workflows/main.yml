@@ -153,6 +153,14 @@ jobs:
          echo "Verifying CMake installation:"
          which cmake || echo "cmake not found in PATH"
          cmake --version || echo "cmake command failed"
+
+      - name: Fix ownership and write‑permission of CMake binaries
+        shell: bash -l {0}
+        run: |
+          BIN_DIR=/usr/share/miniconda/envs/pyodide-env/bin
+          sudo chown $(id -u):$(id -g) $BIN_DIR/cmake* $BIN_DIR/ccmake* || true
+          sudo chmod u+w $BIN_DIR/cmake* $BIN_DIR/ccmake* || true
+
       - name: Build emsdk
         shell: bash -l {0}
         run: |
@@ -204,8 +212,6 @@ jobs:
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
-          export CMAKE_SKIP_INSTALL=1
-          pip install -r requirements.txt
           ccache -z
           PYODIDE_PACKAGES="tag:core" make
           ccache -s
