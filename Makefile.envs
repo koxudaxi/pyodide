@@ -165,7 +165,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
     \
 	$(CPYTHONBUILD)/Modules/_decimal/libmpdec/libmpdec.a \
     $(CPYTHONBUILD)/Modules/expat/libexpat.a \
-    $(CPYTHONBUILD)/Modules/_hashlib/libHacl.a \
+    $(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_Blake2.a \
 	\
 	-lGL \
 	-legl.js \
