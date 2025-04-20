@@ -125,6 +125,7 @@ $(PYINSTALL)/lib/libhiwire.a :
 		&& CC=emcc EMSCRIPTEN_DEDUPLICATE=1 EXTERN_FAIL=1 make \
 	)
 	cp -r $(HIWIREBUILD)/dist/lib $(PYINSTALL)/
+	mkdir -p $(PYINSTALL)/include
 	cp -r $(HIWIREBUILD)/dist/include $(PYINSTALL)/include/hiwire
 
 python-makefile: $(PYBUILD)/Makefile
