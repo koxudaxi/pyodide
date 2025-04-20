@@ -162,7 +162,10 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lwebsocket.js \
 	-leventloop.js \
 	-lhiwire \
-    -lHacl_Hash_Blake2 \
+    \
+	$(CPYTHONBUILD)/Modules/_decimal/libmpdec/libmpdec.a \
+    $(CPYTHONBUILD)/Modules/expat/libexpat.a \
+    $(CPYTHONBUILD)/Modules/_hashlib/libHacl.a \
 	\
 	-lGL \
 	-legl.js \
