@@ -151,7 +151,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 			  --disable-shared \
 			  --disable-ipv6 \
 			  --enable-big-digits=30 \
-			  --enable-optimizations \
+			  --with-profile-opt=no \
 			  ax_cv_c_float_words_bigendian=no \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(PYBUILD)/config.guess) \
