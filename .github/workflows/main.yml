@@ -141,9 +141,10 @@ jobs:
         shell: bash -l {0}
         run: |
           BIN_DIR=/usr/share/miniconda/envs/pyodide-env/bin
+          sudo chown $(id -u):$(id -g) ${BIN_DIR}
+          sudo chmod u+w ${BIN_DIR}
           sudo chown $(id -u):$(id -g) ${BIN_DIR}/* || true
           sudo chmod u+w ${BIN_DIR}/* || true
-
           
       - name: Install dependencies (Python)
         shell: bash -l {0}
