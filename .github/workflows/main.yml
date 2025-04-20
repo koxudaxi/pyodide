@@ -178,7 +178,17 @@ jobs:
 
           emmake make -C "$PY_SRC_DIR" sysconfigdata -j${EMSDK_NUM_CORES:-3}
 
+          PY_BUILD_ROOT="$PWD/cpython/build/Python-3.14.0a1"
           PY_SUBDIR=$(cat "$PY_BUILD_ROOT/pybuilddir.txt")
+          WASM_SYS=$(ls "$PY_BUILD_ROOT/$PY_SUBDIR"/_sysconfigdata__*.py)
+          
+          LINUX_DIR="$PY_BUILD_ROOT/build/lib.linux-x86_64-3.14"
+          mkdir -p "$LINUX_DIR"
+          
+          cp "$WASM_SYS"  "$LINUX_DIR/_sysconfigdata__linux_x86_64-linux-gnu.py"
+          echo "★ stub linux_x86_64 sysconfigdata copied to $LINUX_DIR"
+                  PY_SUBDIR=$(cat "$PY_BUILD_ROOT/pybuilddir.txt")
+          
           TARGET_JSON="$PY_BUILD_ROOT/${PY_SUBDIR}/build-details.json"
 
           mkdir -p "$(dirname "$TARGET_JSON")"
