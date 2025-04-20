@@ -144,7 +144,8 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 		CONFIG_SITE=./Tools/wasm/config.site-wasm32-emscripten READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
-			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1" \
+			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1 -I$(PYINSTALL)/include" \
+			  LDFLAGS="-L$(PYINSTALL)/lib" \
 			  PLATFORM_TRIPLET="$(PLATFORM_TRIPLET)" \
 			  --without-pymalloc \
 			  --disable-shared \
