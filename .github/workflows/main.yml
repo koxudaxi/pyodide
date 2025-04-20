@@ -127,11 +127,6 @@ jobs:
         run: |
           brew install coreutils
 
-      - name: Install dependencies (Python)
-        shell: bash -l {0}
-        run: |
-          pip install -r requirements.txt
-
       - name: Install cmake
         shell: bash -l {0}
         run: |
@@ -160,6 +155,11 @@ jobs:
           BIN_DIR=/usr/share/miniconda/envs/pyodide-env/bin
           sudo chown $(id -u):$(id -g) $BIN_DIR/cmake* $BIN_DIR/ccmake* || true
           sudo chmod u+w $BIN_DIR/cmake* $BIN_DIR/ccmake* || true
+
+      - name: Install dependencies (Python)
+        shell: bash -l {0}
+        run: |
+          pip install -r requirements.txt
 
       - name: Build emsdk
         shell: bash -l {0}
