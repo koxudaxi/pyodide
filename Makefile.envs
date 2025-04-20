@@ -168,7 +168,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
     \
     $(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_SHA2.a \
     $(shell test -f $(CPYTHONBUILD)/Modules/_hacl/libHacl_HMAC.a \
-           && echo $(CPYTHONBUILD)/Modules/_hacl/libHacl_HMAC.a) \
+          && echo $(CPYTHONBUILD)/Modules/_hacl/libHacl_HMAC.a \
+          || echo $(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_Blake2.a) \
     \
 	-lGL \
 	-legl.js \
