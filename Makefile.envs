@@ -163,9 +163,10 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-leventloop.js \
 	-lhiwire \
     \
-	$(CPYTHONBUILD)/Modules/_decimal/libmpdec/libmpdec.a \
+    $(CPYTHONBUILD)/Modules/_decimal/libmpdec/libmpdec.a \
     $(CPYTHONBUILD)/Modules/expat/libexpat.a \
-    $(wildcard $(CPYTHONBUILD)/Modules/_hacl/libHacl_*.a) \
+    $(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_SHA2.a \
+    $(CPYTHONBUILD)/Modules/_hacl/libHacl_HMAC.a \
 	\
 	-lGL \
 	-legl.js \
