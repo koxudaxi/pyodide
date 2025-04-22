@@ -57,9 +57,6 @@ $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched
 	emmake make -C $(PYBUILD) PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
 	cp $(PYBUILD)/$(PYLIB) $(PYINSTALL)/lib/
 
-	cp $(PYBUILD)/Modules/_hacl/libHacl_Hash_Blake2.a $(PYINSTALL)/lib/
-
-
 .PHONY=rebuild
 rebuild: sysconfigdata
 	emmake make -C $(PYBUILD) PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
