@@ -39,7 +39,7 @@ sysconfigdata:
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(PYINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
 
-LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS) $$(LIBHACL_SHA2_OBJS)
+LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS)
 
 $(PYBUILD)/.patched_makefile:
 	cd $(PYBUILD) && sed -i 's/^libinstall:.*/libinstall:/' Makefile
@@ -47,6 +47,8 @@ $(PYBUILD)/.patched_makefile:
 	  '/^PY_CORE_EXTRA_LIBS =/s|$$| \
       $(PYBUILD)/Modules/_decimal/libmpdec/libmpdec.a \
       $(PYBUILD)/Modules/expat/libexpat.a \
+      $(PYBUILD)/Modules/_hacl/libHacl_Hash_SHA2.a \
+      $(PYBUILD)/Modules/_hacl/libHacl_Hash_Blake2.a \
  	  $(PYINSTALL)/lib/libffi.a|' \
 	  Makefile
 	touch $@
