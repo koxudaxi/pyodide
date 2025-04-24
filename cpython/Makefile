@@ -44,10 +44,12 @@ LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS)
 $(PYBUILD)/.patched_makefile:
 	cd $(PYBUILD) && sed -i 's/^libinstall:.*/libinstall:/' Makefile
 	cd $(PYBUILD) && sed -i \
+	  '/^PY_CORE_EXTRA_LIBS =/s|$(HACL_LIBS)||' \
+	  Makefile
+	cd $(PYBUILD) && sed -i \
 	  '/^PY_CORE_EXTRA_LIBS =/s|$$| \
       $(PYBUILD)/Modules/_decimal/libmpdec/libmpdec.a \
       $(PYBUILD)/Modules/expat/libexpat.a \
-      $(HACL_LIBS) \
  	  $(PYINSTALL)/lib/libffi.a|' \
 	  Makefile
 	touch $@
