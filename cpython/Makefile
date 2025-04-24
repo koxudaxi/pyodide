@@ -47,10 +47,7 @@ $(PYBUILD)/.patched_makefile:
 	  '/^PY_CORE_EXTRA_LIBS =/s|$$| \
       $(PYBUILD)/Modules/_decimal/libmpdec/libmpdec.a \
       $(PYBUILD)/Modules/expat/libexpat.a \
-      $(PYBUILD)/Modules/_hacl/libHacl_Hash_MD5.a \
-      $(PYBUILD)/Modules/_hacl/libHacl_Hash_SHA1.a \
-      $(PYBUILD)/Modules/_hacl/libHacl_Hash_SHA2.a \
-      $(PYBUILD)/Modules/_hacl/libHacl_Hash_Blake2.a \
+      $(HACL_LIBS) \
  	  $(PYINSTALL)/lib/libffi.a|' \
 	  Makefile
 	touch $@

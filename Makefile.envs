@@ -177,7 +177,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lhtml5.js \
 	-lhtml5_webgl.js \
 	-lsdl.js \
-	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
+	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0 \
+	-Wl,--whole-archive $(HACL_LIBS) -Wl,--no-whole-archive
 
 EXPORTS=_main \
    ,_free \
