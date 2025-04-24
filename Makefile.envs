@@ -160,7 +160,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s EXPORTED_FUNCTIONS='$(EXPORTS)'\
 	\
 	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
-	$(HACL_LIBS) \
 	-lffi \
 	-lstdc++ \
 	-lidbfs.js \
