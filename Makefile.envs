@@ -44,12 +44,6 @@ export TARGETINSTALLDIR=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
 
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS)
 
-HACL_LIBS := $(filter-out \
-  %libHacl_Hash_MD5.a \
-  %libHacl_Hash_SHA1.a \
-  %libHacl_Hash_SHA2.a, \
-  $(wildcard $(CPYTHONBUILD)/Modules/_hacl/libHacl_*.a))
-
 # Use env variable if defined, otherwise fallback to './'
 export PYODIDE_BASE_URL?=./
 
@@ -178,7 +172,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lhtml5_webgl.js \
 	-lsdl.js \
 	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0 \
-	-Wl,--whole-archive $(HACL_LIBS) -Wl,--no-whole-archive
 
 EXPORTS=_main \
    ,_free \
