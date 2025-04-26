@@ -88,7 +88,9 @@ prepare-source: $(PYBUILD)/.patched
 
 $(GITREPO):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
-	(cd $(ROOT)/downloads && git clone -b tstrings --depth 1  https://github.com/lysnikolaou/cpython.git Python-$(PYVERSION))
+	(cd $(ROOT)/downloads && \
+  git clone -b tstrings --depth 1 --recurse-submodules \
+      https://github.com/lysnikolaou/cpython.git Python-$(PYVERSION))
 
 $(PYBUILD)/.patched: $(GITREPO)
 	[ -d $(PYBUILD) ] || mkdir -p $(dir $(PYBUILD))
