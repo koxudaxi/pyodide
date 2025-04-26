@@ -42,14 +42,19 @@ sysconfigdata:
 LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS)
 
 $(PYBUILD)/.patched_makefile:
-	cd $(PYBUILD) && sed -i 's/^libinstall:.*/libinstall:/' Makefile
-	cd $(PYBUILD) && sed -i \
-	  '/^PY_CORE_EXTRA_LIBS =/s|$$| \
+    cd $(PYBUILD) && sed -i 's/^libinstall:.*/libinstall:/' Makefile
+    cd $(PYBUILD) && sed -i \
+      '/^PY_CORE_EXTRA_LIBS =/s|$$| \
       $(PYBUILD)/Modules/_decimal/libmpdec/libmpdec.a \
       $(PYBUILD)/Modules/expat/libexpat.a \
- 	  $(PYINSTALL)/lib/libffi.a|' \
-	  Makefile
-	touch $@
+      $(PYBUILD)/Modules/_hacl/libHacl_Hash_MD5.a \
+      $(PYBUILD)/Modules/_hacl/libHacl_Hash_SHA1.a \
+      $(PYBUILD)/Modules/_hacl/libHacl_Hash_SHA2.a \
+      $(PYBUILD)/Modules/_hacl/libHacl_Hash_Blake2b.a \
+      $(PYBUILD)/Modules/_hacl/libHacl_Hash_Blake2s.a \
+      $(PYINSTALL)/lib/libffi.a|' \
+      Makefile
+    touch $@
 
 $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched_makefile
 	# touch libpython3.12.a so we don't remake it due to modified Makefile(??)
