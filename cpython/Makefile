@@ -41,17 +41,13 @@ sysconfigdata:
 
 LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS)
 
+.PHONY: patch_makefile
 $(PYBUILD)/.patched_makefile:
 	cd $(PYBUILD) && sed -i 's/^libinstall:.*/libinstall:/' Makefile
 	cd $(PYBUILD) && sed -i \
       '/^PY_CORE_EXTRA_LIBS =/s|$$| \
       $(PYBUILD)/Modules/_decimal/libmpdec/libmpdec.a \
       $(PYBUILD)/Modules/expat/libexpat.a \
-      $(PYBUILD)/Modules/_hacl/libHacl_Hash_MD5.a \
-      $(PYBUILD)/Modules/_hacl/libHacl_Hash_SHA1.a \
-      $(PYBUILD)/Modules/_hacl/libHacl_Hash_SHA2.a \
-      $(PYBUILD)/Modules/_hacl/libHacl_Hash_Blake2b.a \
-      $(PYBUILD)/Modules/_hacl/libHacl_Hash_Blake2s.a \
       $(PYINSTALL)/lib/libffi.a|' \
       Makefile
 	touch $@
@@ -149,7 +145,8 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 		CONFIG_SITE=./Tools/wasm/config.site-wasm32-emscripten READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
-			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1 -I$(PYINSTALL)/include" \
+       CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1 -I$(PYINSTALL)/include \
+                 -I$(PYBUILD)/Modules/_hacl/include" \
 			  LDFLAGS="-L$(PYINSTALL)/lib" \
 			  PLATFORM_TRIPLET="$(PLATFORM_TRIPLET)" \
 			  --without-pymalloc \

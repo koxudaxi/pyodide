@@ -140,6 +140,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
 	-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
+	-s ERROR_ON_UNDEFINED_SYMBOLS=0 \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
 	-s FORCE_FILESYSTEM=1 \
@@ -165,9 +166,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lhiwire \
 	$(CPYTHONBUILD)/Modules/_decimal/libmpdec/libmpdec.a \
 	$(CPYTHONBUILD)/Modules/expat/libexpat.a \
-	$(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_SHA2.a \
-	$(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_Blake2b.a \
-	$(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_Blake2s.a \
 	-lGL \
 	-legl.js \
 	-lwebgl.js \
@@ -230,6 +228,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-s MODULARIZE=1 \
 		-s EXPORT_NAME="'_createPyodideModule'" \
 		-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES,FS,ENV,stringToNewUTF8,addFunction' \
+		-s ERROR_ON_UNDEFINED_SYMBOLS=0 \
 		-s LZ4=1 \
 		-s USE_ZLIB \
 		-s USE_BZIP2 \
@@ -259,6 +258,8 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-mreference-types \
 	-I$(PYTHONINCLUDE) \
 	-I$(PYTHONINCLUDE)/.. \
+	-I$(CPYTHONROOT)/Modules/_hacl \
+    -I$(CPYTHONROOT)/Modules/_hacl/include/ \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
 
 .output_vars:
