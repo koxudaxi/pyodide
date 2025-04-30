@@ -89,9 +89,7 @@ prepare-source: $(PYBUILD)/.patched
 
 $(GITREPO):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
-	(cd $(ROOT)/downloads && \
-  git clone -b tstrings --depth 1 --recurse-submodules \
-      https://github.com/lysnikolaou/cpython.git Python-$(PYVERSION))
+	(cd $(ROOT)/downloads && git clone -b main --depth 1  https://github.com/python/cpython.git Python-$(PYVERSION))
 
 $(PYBUILD)/.patched: $(GITREPO)
 	[ -d $(PYBUILD) ] || mkdir -p $(dir $(PYBUILD))
@@ -145,8 +143,7 @@ $(PYBUILD)/Makefile: $(PYBUILD)/.patched
 		CONFIG_SITE=./Tools/wasm/config.site-wasm32-emscripten READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
-       CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1 -I$(PYINSTALL)/include \
-                 -I$(PYBUILD)/Modules/_hacl/include" \
+			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1 -I$(PYINSTALL)/include" \
 			  LDFLAGS="-L$(PYINSTALL)/lib" \
 			  PLATFORM_TRIPLET="$(PLATFORM_TRIPLET)" \
 			  --without-pymalloc \
