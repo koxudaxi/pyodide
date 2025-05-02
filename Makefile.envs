@@ -221,6 +221,16 @@ EXPORTS=_main \
    ,__PyTraceback_Add \
    ,_PyUnicode_Data \
    ,_PyUnicode_New \
+   ,_Py_LibHacl_Hacl_Hash_SHA2_malloc_256 \
+   ,_Py_LibHacl_Hacl_Hash_SHA2_update \
+   ,_Py_LibHacl_Hacl_Hash_SHA2_update_multi \
+   ,_Py_LibHacl_Hacl_Hash_SHA2_update_last \
+   ,_Py_LibHacl_Hacl_Hash_SHA2_finish \
+   ,_Py_LibHacl_Hacl_Hash_SHA2_reset \
+   ,_Py_LibHacl_Hacl_Hash_SHA2_digest \
+   ,_Py_LibHacl_Hacl_Hash_SHA2_free \
+   ,_Py_LibHacl_Hacl_Hash_SHA2_copy \
+   ,_Py_LibHacl_Hacl_Hash_SHA2_hash \
 
 
 ifeq ($(DISABLE_DYLINK), 1)
