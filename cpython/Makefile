@@ -54,6 +54,12 @@ $(PYBUILD)/.patched_makefile:
 		for alg in MD5 SHA1 SHA2 SHA3 BLAKE2 HMAC; do \
 	  	sed -i "s/\$$(LIBHACL_$${alg}_LIB_SHARED)/\$$(LIBHACL_$${alg}_LIB_STATIC)/" Makefile; \
 		done
+	cd $(PYBUILD) && sed -i \
+      '/^LIBHACL_BLAKE2_SIMD128_OBJS=/c\LIBHACL_BLAKE2_SIMD128_OBJS= \\\n\tModules/_hacl/Hacl_Hash_Blake2s_Simd128.o \\\n\tModules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o' \
+      Makefile
+	cd $(PYBUILD) && sed -i \
+      '/^LIBHACL_BLAKE2_SIMD256_OBJS=/c\LIBHACL_BLAKE2_SIMD256_OBJS= \\\n\tModules/_hacl/Hacl_Hash_Blake2b_Simd256.o \\\n\tModules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o' \
+      Makefile
 	touch $@
 
 $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched_makefile
