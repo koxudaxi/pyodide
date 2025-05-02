@@ -218,7 +218,7 @@ $(eval $(call preprocess-js,js2python.js))
 
 pyodide_build:
 	@echo "Ensuring editable pyodide-build is installed"
-	./tools/check_editable_pyodide_build.py || python3.13 -m pip install -e ./pyodide-build
+	./tools/check_editable_pyodide_build.py || python3.12 -m pip install -e ./pyodide-build
 	@which pyodide >/dev/null
 
 
