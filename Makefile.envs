@@ -131,6 +131,7 @@ export LDFLAGS_BASE=\
 
 export CXXFLAGS_BASE=
 
+HACL_LIBS := $(wildcard $(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_*.a)
 
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s MAIN_MODULE=1 \
@@ -164,14 +165,9 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lwebsocket.js \
 	-leventloop.js \
 	-lhiwire \
-	--whole-archive \
+	-Wl,--whole-archive $(HACL_LIBS) -Wl,--no-whole-archive \
 	$(CPYTHONBUILD)/Modules/_decimal/libmpdec/libmpdec.a \
 	$(CPYTHONBUILD)/Modules/expat/libexpat.a \
-	$(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_SHA1.a \
-	$(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_BLAKE2.a \
-	$(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_SHA2.a \
-	$(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_SHA3.a \
-	$(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_MD5.a \
 	-lGL \
 	-legl.js \
 	-lwebgl.js \
