@@ -164,8 +164,14 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lwebsocket.js \
 	-leventloop.js \
 	-lhiwire \
+	--whole-archive \
 	$(CPYTHONBUILD)/Modules/_decimal/libmpdec/libmpdec.a \
 	$(CPYTHONBUILD)/Modules/expat/libexpat.a \
+	$(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_SHA1.a \
+	$(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_BLAKE2.a \
+	$(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_SHA2.a \
+	$(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_SHA3.a \
+	$(CPYTHONBUILD)/Modules/_hacl/libHacl_Hash_MD5.a \
 	-lGL \
 	-legl.js \
 	-lwebgl.js \
@@ -221,49 +227,6 @@ EXPORTS=_main \
    ,__PyTraceback_Add \
    ,_PyUnicode_Data \
    ,_PyUnicode_New \
-   ,_Py_LibHacl_Hacl_Hash_MD5_malloc \
-   ,_Py_LibHacl_Hacl_Hash_MD5_update \
-   ,_Py_LibHacl_Hacl_Hash_MD5_free \
-   ,_Py_LibHacl_Hacl_Hash_MD5_copy \
-   ,_Py_LibHacl_Hacl_Hash_MD5_digest \
-   ,_Py_LibHacl_Hacl_Hash_SHA1_malloc \
-   ,_Py_LibHacl_Hacl_Hash_SHA1_update \
-   ,_Py_LibHacl_Hacl_Hash_SHA1_free \
-   ,_Py_LibHacl_Hacl_Hash_SHA1_copy \
-   ,_Py_LibHacl_Hacl_Hash_SHA1_digest \
-   ,_Py_LibHacl_Hacl_Hash_SHA2_malloc_256 \
-   ,_Py_LibHacl_Hacl_Hash_SHA2_update_256 \
-   ,_Py_LibHacl_Hacl_Hash_SHA2_malloc_224 \
-   ,_Py_LibHacl_Hacl_Hash_SHA2_malloc_512 \
-   ,_Py_LibHacl_Hacl_Hash_SHA2_update_512 \
-   ,_Py_LibHacl_Hacl_Hash_SHA2_malloc_384 \
-   ,_Py_LibHacl_Hacl_Hash_SHA2_free_256 \
-   ,_Py_LibHacl_Hacl_Hash_SHA2_copy_256 \
-   ,_Py_LibHacl_Hacl_Hash_SHA2_digest_256 \
-   ,_Py_LibHacl_Hacl_Hash_SHA2_free_512 \
-   ,_Py_LibHacl_Hacl_Hash_SHA2_copy_512 \
-   ,_Py_LibHacl_Hacl_Hash_SHA2_digest_512 \
-   ,_Py_LibHacl_Hacl_Hash_SHA3_free \
-   ,_Py_LibHacl_Hacl_Hash_SHA3_malloc \
-   ,_Py_LibHacl_Hacl_Hash_SHA3_update \
-   ,_Py_LibHacl_Hacl_Hash_SHA3_copy \
-   ,_Py_LibHacl_Hacl_Hash_SHA3_digest \
-   ,_Py_LibHacl_Hacl_Hash_SHA3_hash_len \
-   ,_Py_LibHacl_Hacl_Hash_SHA3_block_len \
-   ,_Py_LibHacl_Hacl_Hash_SHA3_is_shake \
-   ,_Py_LibHacl_Hacl_Hash_SHA3_squeeze \
-   ,_Py_LibHacl_Hacl_Hash_Blake2b_free \
-   ,_Py_LibHacl_Hacl_Hash_Blake2s_free \
-   ,_Py_LibHacl_Hacl_Hash_Blake2b_copy \
-   ,_Py_LibHacl_Hacl_Hash_Blake2s_copy \
-   ,_Py_LibHacl_Hacl_Hash_Blake2b_digest \
-   ,_Py_LibHacl_Hacl_Hash_Blake2s_digest \
-   ,_Py_LibHacl_Hacl_Hash_Blake2b_update \
-   ,_Py_LibHacl_Hacl_Hash_Blake2s_update \
-   ,_Py_LibHacl_Hacl_Hash_Blake2b_info \
-   ,_Py_LibHacl_Hacl_Hash_Blake2s_info \
-   ,_Py_LibHacl_Hacl_Hash_Blake2b_malloc_with_params_and_key \
-   ,_Py_LibHacl_Hacl_Hash_Blake2s_malloc_with_params_and_key \
 
 
 

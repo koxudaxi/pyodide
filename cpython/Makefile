@@ -50,6 +50,10 @@ $(PYBUILD)/.patched_makefile:
       $(PYBUILD)/Modules/expat/libexpat.a \
       $(PYINSTALL)/lib/libffi.a|' \
       Makefile
+	cd $(PYBUILD) && \
+		for alg in MD5 SHA1 SHA2 SHA3 BLAKE2 HMAC; do \
+	  	sed -i "s/\$$(LIBHACL_$${alg}_LIB_SHARED)/\$$(LIBHACL_$${alg}_LIB_STATIC)/" Makefile; \
+		done
 	touch $@
 
 $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched_makefile
