@@ -28,12 +28,12 @@ build:
     embuilder build sqlite3 --pic
 
     for file in "${FILES[@]}"; do
-      emcc $STDLIB_MODULE_CFLAGS -c "${file}" -o "${file/.c/.o}"  \
+      emcc -DHAVE_POSIX_FALLOCATE=0 $STDLIB_MODULE_CFLAGS -c "${file}" -o "${file/.c/.o}"  \
         -sUSE_SQLITE3 -DMODULENAME=sqlite
     done
 
     OBJECT_FILES=$(find Modules/_sqlite/ -name "*.o")
-    emcc $OBJECT_FILES -o $DISTDIR/_sqlite3.so $SIDE_MODULE_LDFLAGS \
+    emcc $OBJECT_FILES -o $DISTDIR/_sqlite3.so $SIDE_MODULE_LDFLAGS -DHAVE_POSIX_FALLOCATE=0 \
        -sUSE_SQLITE3 -lsqlite3
 
     cd Lib && tar --exclude=test -cf - sqlite3 | tar -C $DISTDIR -xf -
