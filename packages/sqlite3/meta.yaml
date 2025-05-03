@@ -25,6 +25,7 @@ build:
       "Modules/_sqlite/util.c"
     )
 
+    export SQLITE_CFLAGS="-DSQLITE_DISABLE_FALLOCATE"
     embuilder build sqlite3 --pic
 
     for file in "${FILES[@]}"; do
