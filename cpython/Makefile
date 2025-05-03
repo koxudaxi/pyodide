@@ -19,7 +19,7 @@ LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
 HIWIREBUILD=$(ROOT)/build/hiwire
 HIWIREREPO=https://github.com/hoodmane/hiwire
 HIWIRE_COMMIT=49f3450e34f3f50d4b8296e782dc321bb2e3264e
-HOSTPYTHON=python3.12
+HOSTPYTHON=python3.14
 
 ifdef CPYTHON_DEBUG
 	MAYBE_WITH_PYDEBUG=--with-pydebug
@@ -54,12 +54,7 @@ $(PYBUILD)/.patched_makefile:
 		for alg in MD5 SHA1 SHA2 SHA3 BLAKE2 HMAC; do \
 	  	sed -i "s/\$$(LIBHACL_$${alg}_LIB_SHARED)/\$$(LIBHACL_$${alg}_LIB_STATIC)/" Makefile; \
 		done
-	cd $(PYBUILD) && sed -i \
-      '/^LIBHACL_BLAKE2_SIMD128_OBJS=/c\LIBHACL_BLAKE2_SIMD128_OBJS= \\\n\tModules/_hacl/Hacl_Hash_Blake2s_Simd128.o \\\n\tModules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o' \
-      Makefile
-	cd $(PYBUILD) && sed -i \
-      '/^LIBHACL_BLAKE2_SIMD256_OBJS=/c\LIBHACL_BLAKE2_SIMD256_OBJS= \\\n\tModules/_hacl/Hacl_Hash_Blake2b_Simd256.o \\\n\tModules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o' \
-      Makefile
+	cd $(PYBUILD) && sed -i '/^LIBHACL_BLAKE2_SIMD128_OBJS=/d' Makefile
 	touch $@
 
 $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched_makefile
