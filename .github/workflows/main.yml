@@ -65,6 +65,10 @@ jobs:
           path: |
             /tmp/ccache
           key: ${{ hashFiles('Makefile.envs') }}-${{ runner.os }}-v20211025-
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: pyodide-env
