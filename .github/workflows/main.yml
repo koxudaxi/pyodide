@@ -108,7 +108,7 @@ jobs:
           cd pydantic_core-2.18.1
 
           sed -i 's|type_\.__forward_arg__|getattr(type_, "__forward_arg__", type_)|' \
-            pydantic_core*/generate_self_schema.py
+            generate_self_schema.py
           maturin build -i $(which python) --release --compatibility off
           python -m pip install target/wheels/pydantic_core-*-cp314-*.whl
           python -m pip install 'pydantic>=2,<3'
