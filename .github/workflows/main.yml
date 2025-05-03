@@ -52,6 +52,7 @@ jobs:
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
       CCACHE_DIR: /tmp/ccache
+      PYO3_USE_ABI3_FORWARD_COMPATIBILITY: '1'
     permissions:
       actions: write
       checks: write
@@ -94,6 +95,24 @@ jobs:
         shell: bash
         run: |
           echo "/tmp/builder/python/bin" >> $GITHUB_PATH
+      - name: Build & install patched pydantic-core
+        shell: bash -l {0}
+        env:
+          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: '1'
+        run: |
+          python -m pip install --upgrade pip wheel maturin
+
+          curl -L -o pc.tar.gz \
+            https://files.pythonhosted.org/packages/3d/28/d693aab237fca82da327990a88a983b2b84b890032076ee4a87e18038dbb/pydantic_core-2.18.1.tar.gz
+          tar xf pc.tar.gz
+          cd pydantic_core-2.18.1
+
+          sed -i "s/m = re.search.*/forward=\$(python - <<'PY'\nimport sys, json, re, pathlib, textwrap, inspect\nPY) &>/dev/null/" generate_self_schema.py
+          sed -i "s/type_.__forward_arg__/getattr(type_, '__forward_arg__', type_)/" generate_self_schema.py
+
+          maturin build -i $(which python) --release --compatibility off
+          python -m pip install target/wheels/pydantic_core-*-cp314-*.whl
+          python -m pip install 'pydantic>=2,<3'
       - name: Check Versions
         shell: bash -l {0}
         run: |
