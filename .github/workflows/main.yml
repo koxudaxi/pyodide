@@ -95,22 +95,36 @@ jobs:
         shell: bash
         run: |
           echo "/tmp/builder/python/bin" >> $GITHUB_PATH
-      - name: Build & install patched pydantic-core
+      - name: Prepare PyO3 main (0.24.2-plus)
         shell: bash -l {0}
+        run: |
+          git clone --depth 1 https://github.com/PyO3/pyo3.git pyo3-main
+          find pyo3-main -name Cargo.toml \
+            -exec sed -i 's/^version = "0\.25.*/version = "0.24.2-plus"/' {} +
+
+      - name: Patch pydantic-core Cargo.toml
+        shell: bash -l {0}
+        run: |
+          cat >> pydantic_core-2.34.1/Cargo.toml <<'EOF'
+          [patch.crates-io]
+          pyo3              = { path = "../../pyo3-main/pyo3" }
+          pyo3-ffi          = { path = "../../pyo3-main/pyo3-ffi" }
+          pyo3-macros       = { path = "../../pyo3-main/pyo3-macros" }
+          pyo3-build-config = { path = "../../pyo3-main/pyo3-build-config" }
+          EOF
+          (cd pydantic_core-2.34.1 && cargo update -p pyo3)
+
+      - name: Build & install patched pydantic-core
         env:
-          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: '1'
+          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: '0'
+        shell: bash -l {0}
         run: |
           python -m pip install --upgrade pip wheel maturin typing_extensions
-
-          curl -L -o pc.tar.gz \
-            https://files.pythonhosted.org/packages/42/fa/5f682f3db14e14f7b5b7f5008ac24594b93943d1da4facbacff5876624cf/pydantic_core-2.34.1.tar.gz
-          tar xf pc.tar.gz
           cd pydantic_core-2.34.1
-
-          sed -i 's|type_\.__forward_arg__|getattr(type_, "__forward_arg__", type_)|' \
-            generate_self_schema.py
+          sed -i 's|type_\.__forward_arg__|getattr(type_, "__forward_arg__", type_)|' generate_self_schema.py
+          sed -i 's|elif fr_arg.endswith(|elif isinstance(fr_arg, str) and fr_arg.endswith(|' generate_self_schema.py
           maturin build -i $(which python) --release --compatibility off
-          python -m pip install target/wheels/pydantic_core-*-cp314-*.whl
+          python -m pip install target/wheels/pydantic_core-*-cp*-*.whl
           python -m pip install 'pydantic>=2,<3'
       - name: Check Versions
         shell: bash -l {0}
