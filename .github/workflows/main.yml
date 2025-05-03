@@ -70,7 +70,6 @@ jobs:
           activate-environment: pyodide-env
           environment-file: environment.yml
           channels: conda-forge
-          python-version: "3.13"
       - name: Cache builder Python
         id: cache-builder
         uses: actions/cache@v4
