@@ -31,12 +31,14 @@ build:
     cat > /tmp/posix_stub.c <<'EOF'
     #include <errno.h>
     #ifdef __cplusplus
-    extern "C"
+    extern "C" {
     #endif
-    int posix_fallocate(int fd, long long len) {
-        (void)fd; (void)len;
-        return 0;
+    int posix_fallocate(int fd, long long len) { (void)fd; (void)len; return 0; }
+    int geteuid(void) { return 1; }
+    int getuid (void) { return 1; }
+    #ifdef __cplusplus
     }
+    #endif
     EOF
     emcc -fPIC -c /tmp/posix_stub.c -o /tmp/posix_stub.o
 
