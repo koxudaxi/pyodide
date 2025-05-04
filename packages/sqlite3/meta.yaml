@@ -25,10 +25,8 @@ build:
       "Modules/_sqlite/util.c"
     )
 
-    embuilder build \
-      sqlite3 \
-      --pic \
-      --cflags="-DSQLITE_DISABLE_FALLOCATE=1"
+    EMCC_CFLAGS="-DSQLITE_DISABLE_FALLOCATE=1" \
+      embuilder build sqlite3 --pic
 
     cat > /tmp/posix_stub.c <<'EOF'
     #include <errno.h>
