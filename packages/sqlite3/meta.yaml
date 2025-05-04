@@ -30,16 +30,24 @@ build:
 
     cat > /tmp/posix_stub.c <<'EOF'
     #include <errno.h>
-    #ifdef __cplusplus
-    extern "C" {
-    #endif
+    #include <sys/types.h>
+    
+    int getuid(void)    { return 0; }
+    int geteuid(void)   { return 0; }
+    int getgid(void)    { return 0; }
+    int getegid(void)   { return 0; }
+    
+    int ftruncate(int fd, off_t len) { (void)fd; (void)len; return 0; }
+    
+    int truncate(const char *path, off_t len) { (void)path; (void)len; return 0; }
+    
+    double trunc(double x)  { return (double)((long long)x); }
+    float  truncf(float x)  { return (float)((long long)x);  }
+    long double truncl(long double x) { return (long double)((long long)x); }
+    
     int posix_fallocate(int fd, long long len) { (void)fd; (void)len; return 0; }
-    int geteuid(void) { return 1; }
-    int getuid (void) { return 1; }
-    #ifdef __cplusplus
-    }
-    #endif
     EOF
+    
     emcc -fPIC -c /tmp/posix_stub.c -o /tmp/posix_stub.o
 
     for file in "${FILES[@]}"; do
