@@ -2,6 +2,7 @@
 #include "Python.h"
 
 #include "error_handling.h"
+#include "python_unexposed.h"
 
 _Py_IDENTIFIER(get_cmeth_docstring);
 PyObject* py_docstring_mod;

@@ -1,13 +1,13 @@
 package:
   name: pydantic_core
-  version: 2.27.2
+  version: 2.34.1
   # Warning: pydantic has a pin on pydantic_core, they need to be updated
   # together
   top-level:
     - pydantic_core
 source:
-  url: https://files.pythonhosted.org/packages/fc/01/f3e5ac5e7c25833db5eb555f7b7ab24cd6f8c322d3a3ad2d67a952dc0abc/pydantic_core-2.27.2.tar.gz
-  sha256: eb026e5a4c1fee05726072337ff51d1efb6f59090b7da90d30ea58625b1ffb39
+  url: https://github.com/koxudaxi/pydantic-core/archive/8b3bdfa2729f00a31f6b5fab5e4d21fb4a71ff53.tar.gz
+  sha256: b91d186639df7af84dfc5d6c45c6606e35da0d78100081e987c88b96ea6e8dae
 requirements:
   executable:
     - rustup

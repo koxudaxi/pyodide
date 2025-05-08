@@ -3,6 +3,7 @@
 
 #include "docstring.h"
 #include "error_handling.h"
+#include "python_unexposed.h"
 #include "js2python.h"
 #include "jslib.h"
 #include "jsmemops.h"
@@ -105,7 +106,8 @@ _python2js_long(PyObject* x)
                                             (unsigned char*)digits,
                                             4 * ndigits,
                                             true /* little endian */,
-                                            true /* signed */));
+                                            true /* signed */,
+                                            true /* with_exceptions */));
       return JsvNum_fromDigits(digits, ndigits);
     }
   }

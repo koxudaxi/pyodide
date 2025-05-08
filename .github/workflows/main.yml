@@ -3,7 +3,11 @@ name: main
 on:
   push:
   pull_request:
-
+  # schedule:
+    # Build and push Docker images every 3 hours
+    # - cron:  '0 */3 * * *'
+  # allow manual trigger
+  workflow_dispatch:
 concurrency:
   group: main-${{ github.head_ref }}
   cancel-in-progress: true
@@ -78,7 +82,10 @@ jobs:
           path: |
             /tmp/ccache
           key: ${{ hashFiles('Makefile.envs') }}-${{ runner.os }}-v20211025-
-
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: pyodide-env
@@ -97,16 +104,40 @@ jobs:
 
       - name: Install dependencies (ubuntu)
         shell: bash -l {0}
-        if: ${{ contains(runner.os, 'ubuntu') }}
+        #if: ${{ contains(runner.os, 'ubuntu') }}
         run: |
-          sudo apt install -y build-essential git xxd
+          sudo apt install -y build-essential git xxd libbz2-dev liblzma-dev
 
       - name: Install dependencies (macos)
         shell: bash -l {0}
         if: ${{ contains(runner.os, 'macos') }}
         run: |
           brew install coreutils
+      - name: Cache builder Python
+        id: cache-builder
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Publish_build
+            .build
+          key: v3.14.0b1-${{ runner.os }}-v20240719-
 
+      - name: Build builder python
+        if: steps.cache-builder.outputs.cache-hit != 'true'
+        shell: bash -l {0}
+        run: |
+          BUILD_DIR=/tmp/builder/v3.14.0b1
+          mkdir -p "$BUILD_DIR"
+          cd "$BUILD_DIR"
+          git init
+          git remote add origin https://github.com/python/cpython.git
+          git fetch --depth 1 origin v3.14.0b1
+          git checkout FETCH_HEAD
+          ./configure --prefix=/tmp/builder/python --enable-optimizations && make -j3 && make install
+      - name: Add builder python to PATH
+        shell: bash
+        run: |
+          echo "/tmp/builder/python/bin" >> $GITHUB_PATH
       - name: Install dependencies (Python)
         shell: bash -l {0}
         run: |
@@ -133,13 +164,17 @@ jobs:
           make -C cpython
           ccache -s
 
-      - name: build Pyodide with packages ${{ matrix.pyodide_packages }}
+
+      - name: build Pyodide core
         shell: bash -l {0}
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
+          python3.14 -m venv venv314
+          source venv314/bin/activate
+          pip install -r requirements.txt
           ccache -z
-          PYODIDE_PACKAGES=${{ matrix.pyodide_packages }} make
+          PYODIDE_PACKAGES="tag:core" make
           ccache -s
 
       - name: check-size
