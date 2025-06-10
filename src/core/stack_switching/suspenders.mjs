@@ -9,7 +9,12 @@ export function promisingApply(...args) {
   // Record the current stack position. Used in stack_state.mjs
   Module.stackStop = stackSave();
   // Subtle cframe shenanigans...
-  Module.origCframe = _get_cframe();
+  // In Python 3.14, _get_cframe is not available
+  if (typeof _get_cframe !== 'undefined') {
+    Module.origCframe = _get_cframe();
+  } else {
+    Module.origCframe = null;
+  }
   return promisingApplyHandler(...args);
 }
 

@@ -63,7 +63,9 @@ EM_JS(JsVal, saveState, (void), {
   const stackState = new StackState();
   const threadState = _captureThreadState();
   const origCframe = Module.origCframe;
-  _restore_cframe(origCframe);
+  if (origCframe !== null && typeof _restore_cframe !== 'undefined') {
+    _restore_cframe(origCframe);
+  }
   return {
     threadState,
     stackState,
