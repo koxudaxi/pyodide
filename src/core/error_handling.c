@@ -3,6 +3,7 @@
 #include "Python.h"
 // clang-format on
 #include "error_handling.h"
+#include "python_unexposed.h"
 #include "jslib.h"
 #include "jsproxy.h"
 #include "pyproxy.h"

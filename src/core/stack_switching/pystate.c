@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "emscripten.h"
 #include "error_handling.h"
+#include "python_unexposed.h"
 #include "internal/pycore_frame.h"
 
 // This file manages the Python stack / thread state when stack switching.

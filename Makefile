@@ -13,7 +13,6 @@ all: \
 	dist/pyodide-lock.json \
 	dist/console.html \
 	dist/pyodide.d.ts \
-	dist/snapshot.bin \
 
 
 all-but-packages: \
@@ -99,7 +98,6 @@ src/core/libpyodide.a: \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o \
 	src/core/pyversion.o \
-	src/core/stack_switching/pystate.o \
 	src/core/stack_switching/suspenders.o \
 	src/core/print.o
 	emar rcs src/core/libpyodide.a $(filter %.o,$^)
@@ -117,8 +115,40 @@ $(CPYTHONINSTALL)/lib/libpyodide.a: src/core/libpyodide.a
 $(CPYTHONINSTALL)/.installed-pyodide: $(CPYTHONINSTALL)/include/pyodide/.installed $(CPYTHONINSTALL)/lib/libpyodide.a
 	touch $@
 
+EMSCRIPTEN_BIN_DIR := emsdk/emsdk/upstream/bin
+WASM_OPT_ORIGINAL_NAME := wasm-opt
+WASM_OPT_RENAMED_NAME := wasm-opt_
+SCRIPT_WASM_OPT_NAME := $(WASM_OPT_ORIGINAL_NAME)
+
+ORIGINAL_WASM_OPT_PATH := $(EMSCRIPTEN_BIN_DIR)/$(WASM_OPT_ORIGINAL_NAME)
+RENAMED_WASM_OPT_PATH := $(EMSCRIPTEN_BIN_DIR)/$(WASM_OPT_RENAMED_NAME)
+SCRIPT_WASM_OPT_PATH := $(EMSCRIPTEN_BIN_DIR)/$(SCRIPT_WASM_OPT_NAME)
+
+EXTERNAL_WRAPPER_SCRIPT := emsdk/wasm-opt.sh
+
+.PHONY: setup-wasm-opt-wrapper
+setup-wasm-opt-wrapper: $(EXTERNAL_WRAPPER_SCRIPT)
+	@if [ ! -f "$(EXTERNAL_WRAPPER_SCRIPT)" ]; then exit 1; fi
+	@if [ -f "$(ORIGINAL_WASM_OPT_PATH)" ] && ! cmp -s "$(ORIGINAL_WASM_OPT_PATH)" "$(EXTERNAL_WRAPPER_SCRIPT)"; then \
+		cp -pf "$(ORIGINAL_WASM_OPT_PATH)" "$(RENAMED_WASM_OPT_PATH)"; \
+	fi
+	@cp -pf "$(EXTERNAL_WRAPPER_SCRIPT)" "$(SCRIPT_WASM_OPT_PATH)"
+	@chmod +x "$(SCRIPT_WASM_OPT_PATH)"
+
+.PHONY: clean-wasm-opt-wrapper
+clean-wasm-opt-wrapper: $(EXTERNAL_WRAPPER_SCRIPT)
+	@if [ -f "$(SCRIPT_WASM_OPT_PATH)" ] && cmp -s "$(SCRIPT_WASM_OPT_PATH)" "$(EXTERNAL_WRAPPER_SCRIPT)"; then \
+		rm -f "$(SCRIPT_WASM_OPT_PATH)"; \
+	fi
+	@if [ -f "$(RENAMED_WASM_OPT_PATH)" ] && ! cmp -s "$(RENAMED_WASM_OPT_PATH)" "$(EXTERNAL_WRAPPER_SCRIPT)"; then \
+		if [ ! -e "$(ORIGINAL_WASM_OPT_PATH)" ]; then \
+			mv -f "$(RENAMED_WASM_OPT_PATH)" "$(ORIGINAL_WASM_OPT_PATH)"; \
+		fi \
+	fi
+
 
 dist/pyodide.asm.js: \
+	setup-wasm-opt-wrapper \
 	src/core/main.o  \
 	$(wildcard src/py/lib/*.py) \
 	$(CPYTHONLIB) \
@@ -128,6 +158,7 @@ dist/pyodide.asm.js: \
    # TODO(ryanking13): Link libgl to a side module not to the main module.
    # For unknown reason, a side module cannot see symbols when libGL is linked to it.
 	embuilder build libgl
+
 	$(CXX) -o dist/pyodide.asm.js -lpyodide src/core/main.o $(MAIN_MODULE_LDFLAGS)
 
 	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]] || [[ -n $${PYODIDE_DEBUG_JS+x} ]]; then \
@@ -225,8 +256,17 @@ $(eval $(call preprocess-js,pyproxy.ts))
 $(eval $(call preprocess-js,python2js_buffer.js))
 $(eval $(call preprocess-js,js2python.js))
 
+.PHONY: patch-pyodide-build
+patch-pyodide-build:
+	@echo "==> Applying sed-based patch for pyodide-build"
+	sed -i 's|pydantic[^"]*|pydantic@ git+https://github.com/koxudaxi/pydantic.git@94aff8da1cf20b8ab6aa9cee083085cfa6d0b4dc|' pyodide-build/pyproject.toml
+	grep -q '\[tool.hatch.metadata\]' pyodide-build/pyproject.toml || \
+		printf '\n[tool.hatch.metadata]\nallow-direct-references = true\n' >> pyodide-build/pyproject.toml
+	sed -i 's|PYTHON_VERSION = Version(python_version())|PYTHON_VERSION = Version(python_version().split("+", 1)[0])|' pyodide-build/pyodide_build/out_of_tree/pypi.py
+
+
 .PHONY: pyodide_build
-pyodide_build:
+pyodide_build .pyodide_build_installed: patch-pyodide-build
 	@echo "Ensuring pyodide-build is installed"
 	pip install -e ./pyodide-build
 	@which pyodide >/dev/null

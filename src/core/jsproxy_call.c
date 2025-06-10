@@ -1,6 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "jsproxy_call.h"
 #include "error_handling.h"
+#include "python_unexposed.h"
 #include "js2python.h"
 #include "jsbind.h"
 #include "jslib.h"
@@ -202,7 +203,7 @@ find_keyword(PyObject* kwarg_names, PyObject* key)
   for (Py_ssize_t i = 0; i < nkwargs; i++) {
     PyObject* kwname = PyTuple_GET_ITEM(kwarg_names, i);
     assert(PyUnicode_Check(kwname));
-    if (_PyUnicode_EQ(kwname, key)) {
+    if (_PyUnicode_Equal(kwname, key)) {
       return i;
     }
   }

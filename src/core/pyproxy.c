@@ -4,6 +4,7 @@
 #include <emscripten.h>
 
 #include "docstring.h"
+#include "python_unexposed.h"
 #include "js2python.h"
 #include "jsbind.h"
 #include "jslib.h"
@@ -810,17 +811,6 @@ finally:
   return result;
 }
 
-void
-set_new_cframe(_PyCFrame* frame);
-
-_PyCFrame*
-get_cframe();
-
-void
-exit_cframe(_PyCFrame* frame);
-
-void
-restore_cframe(_PyCFrame* frame);
 
 void
 set_suspender(JsVal suspender);
@@ -841,12 +831,8 @@ _pyproxy_apply_promising(JsVal suspender,
                          PyObject** exc)
 {
   set_suspender(suspender);
-  _PyCFrame* cur = get_cframe();
-  _PyCFrame frame;
-  set_new_cframe(&frame);
   JsVal res =
     _pyproxy_apply(callable, jsargs, numposargs, jskwnames, numkwargs);
-  exit_cframe(cur);
   *exc = PyErr_GetRaisedException();
   // In case the result is a thenable, in callPromisingKwargs we only want to
   // await the stack switch not the thenable that Python returned. So we wrap
